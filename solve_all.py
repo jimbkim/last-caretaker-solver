@@ -4,8 +4,16 @@ against real world scarcity. Output: global_plan.json read by webapp.py.
 
 Usage: .venv/bin/python solve_all.py [time_limit_s]
 """
-import json, sys, time
+import json, os, signal, sys, time
 import solver
+
+def _die(*_):
+    # cancelled by the web UI: never leave a half-written plan behind
+    tmp = "global_plan.json.part"
+    if os.path.exists(tmp):
+        os.remove(tmp)
+    sys.exit(130)
+signal.signal(signal.SIGTERM, _die)
 
 TL = int(sys.argv[1]) if len(sys.argv) > 1 else 600
 

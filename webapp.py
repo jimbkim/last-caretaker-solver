@@ -5,7 +5,7 @@ Run:  .venv/bin/python webapp.py [host]   (stdlib only, no installs)
 
 Flow: committees -> humans -> recipe for the human you pick.
 """
-import json, re
+import json, os, re, signal, subprocess, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import solver
@@ -116,6 +116,16 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .smalltxt{font-size:.75rem;margin-left:.35rem}
 .loc{color:#a5d6ff}
 .committee.special{border-style:dashed}
+.planbar{margin-top:.8rem;border-top:1px solid #21262d;padding-top:.6rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.planmode{color:#c9d1d9;cursor:pointer;display:flex;align-items:center;gap:.4rem}
+.busy{position:fixed;inset:0;background:rgba(4,7,12,.82);backdrop-filter:blur(2px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;z-index:50}
+.busy.hidden{display:none}
+.spinner{width:42px;height:42px;border:4px solid #30363d;border-top-color:#f778ba;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.busytxt{text-align:center}
+.cancelbtn{background:#21262d;border:1px solid #f85149;color:#ff7b72;padding:.5rem 1.1rem;border-radius:6px;cursor:pointer;font:inherit}
+body.locked{pointer-events:none;user-select:none}
+body.locked #busy{pointer-events:auto}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab</span></h1>
 <div class="legend">
@@ -134,7 +144,6 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
  <button class="tab" data-s="combo">What would THIS grow?</button>
  <button class="tab" data-s="hunt">Hunt list</button>
- <button class="tab" data-s="plan">Full plan (all 40)</button>
 </div>
 
 <section id="s-tree" class="on">
@@ -149,11 +158,24 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
     <div class="panel" id="humanList" style="min-height:4rem"><span class="small">pick a committee…</span></div>
    </div>
   </div>
+  <div class="planbar">
+   <label class="planmode"><input type="checkbox" id="planMode" onchange="togglePlanMode()">
+    <b>Full plan mode</b> — allocate ALL humans at once against real world counts
+    <span class="small" id="planStamp"></span></label>
+   <button class="tab" id="replanBtn" onclick="startPlan(true)" style="display:none">re-calculate</button>
+  </div>
  </div>
  <div class="sep"><span>OUTPUT</span></div>
  <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b></div>
  <pre id="recipe">pick a committee, then a human — the recipe appears here.</pre>
 </section>
+
+<div id="busy" class="busy hidden">
+ <div class="spinner"></div>
+ <div class="busytxt">Calculating the GLOBAL plan for all 40 humans…<br>
+  <span class="small">the ILP allocates every Ash Notebook & Art of War to the human that needs it most — usually a few minutes</span></div>
+ <button class="cancelbtn" onclick="cancelPlan()">Cancel — back to single solves</button>
+</div>
 
 <section id="s-combo">
  <div class="small">Foods (physical stats):</div>
@@ -173,14 +195,6 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
  <button class="go" onclick="doHunt()">Show hunt list</button></div>
  <div class="small">Every memory, scarcest first, with where the wiki/community says to find it.</div>
  <pre id="result4" style="min-height:10rem">press Show hunt list…</pre>
-</section>
-
-<section id="s-plan">
- <div class="row"><label class="small">availability multiplier (saves re-run)
- <input type="number" id="cap" value="1" min="1" max="20"></label>
- <button class="go" onclick="doPlan()">Generate plan</button></div>
- <div class="small">All 40 committee humans, T4 first, respecting world item counts. Takes ~1 min.</div>
- <pre id="result3" style="min-height:10rem">press Generate…</pre>
 </section>
 
 <script>
@@ -229,7 +243,49 @@ async function showRecipe(full,committee,base){
  curHuman=base;
  $('crumb').innerHTML=`${committee} → ${base} → <b>recipe</b>`;
  $('recipe').textContent='solving…';
- render($('recipe'),await post('/api/solve',{target:full}));}
+ render($('recipe'),await post('/api/solve',{target:full,plan:$('planMode').checked}));}
+
+// ── full-plan mode ──────────────────────────────────────────────────
+let planTimer=null;
+function setLocked(on){
+ document.body.classList.toggle('locked',on);
+ $('busy').classList.toggle('hidden',!on);}
+function togglePlanMode(){
+ if($('planMode').checked){
+  if(!DATA.hasPlan){startPlan(false);}
+  else { $('recipe').textContent='using the cached GLOBAL plan.'; }
+ } else {
+  if(planTimer){clearInterval(planTimer);planTimer=null;}
+  if($('replanBtn'))$('replanBtn').style.display='none';
+  if(curHuman&&curCommittee) refreshCurrent();
+ }}
+function refreshCurrent(){
+ const el=document.querySelectorAll('.human.on')[0];
+ if(el) el.click();}
+async function startPlan(force){
+ setLocked(true);
+ const r=await post('/api/plan/start',{force:!!force});
+ if(r.error){setLocked(false);$('recipe').textContent='could not start: '+r.error;$('planMode').checked=false;return;}
+ planTimer=setInterval(pollPlan,1500);}
+async function pollPlan(){
+ const r=await post('/api/plan/status',{});
+ if(r.status==='running')return;
+ clearInterval(planTimer);planTimer=null;setLocked(false);
+ $('planMode').checked=(r.status==='done');
+ $('replanBtn').style.display=r.status==='done'?'':'none';
+ $('planStamp').textContent=r.status==='done'?('  · calculated '+r.stamp):'';
+ if(r.status==='done'){$('recipe').textContent='GLOBAL plan ready — click a human.';refreshCurrent();}
+ else if(r.status==='cancelled'){$('recipe').textContent='plan cancelled — back to single solves.';}
+ else {$('planMode').checked=false;$('recipe').textContent='plan failed: '+(r.msg||'unknown error');}}
+function initPlanUI(){
+ if(DATA.hasPlan){$('planMode').checked=true;$('replanBtn').style.display='';$('planStamp').textContent='  · cached';}
+}
+initPlanUI();
+async function cancelPlan(){
+ await post('/api/plan/cancel',{});
+ if(planTimer){clearInterval(planTimer);planTimer=null;}
+ setLocked(false);$('planMode').checked=false;
+ $('recipe').textContent='plan cancelled — back to single solves.';}
 
 // ── tab 2: combo ────────────────────────────────────────────────────
 function chips(el,items,mark){items.forEach(it=>{
@@ -248,10 +304,6 @@ async function doCombo(){
 async function doHunt(){
  $('result4').textContent='loading…';
  render($('result4'),await post('/api/hunt',{n:+$('huntn').value||25}));}
-
-async function doPlan(){
- $('result3').textContent='planning 40 humans — ~1 minute, hold tight…';
- render($('result3'),await post('/api/plan',{cap:+$('cap').value||1}));}
 
 async function post(url,body){
  const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
@@ -290,6 +342,7 @@ class H(BaseHTTPRequestHandler):
                 "professions": [{"name": h["name"], "tier": h["tier"],
                                  "req": {k: int(v) for k, v in h["req"].items()}}
                                 for h in solver.humans_],
+                "hasPlan": os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "global_plan.json")),
                 "foods": [{"name": f["name"], "avail": f["avail"]} for f in solver.foods_],
                 "memories": [{"name": m["name"], "avail": m["avail"]} for m in solver.memories_],
             }
@@ -304,14 +357,78 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             body = self._json()
+            if self.path == "/api/plan/start":
+                self._send(200, json.dumps(plan_start(body.get("force", False))))
+                return
+            if self.path == "/api/plan/status":
+                self._send(200, json.dumps(plan_status()))
+                return
+            if self.path == "/api/plan/cancel":
+                self._send(200, json.dumps(plan_cancel()))
+                return
             fn = {"/api/solve": api_solve, "/api/combo": api_combo,
-                  "/api/hunt": api_hunt, "/api/plan": api_plan}.get(self.path)
+                  "/api/hunt": api_hunt}.get(self.path)
             if fn:
                 self._send(200, json.dumps({"html": fn(body)}))
             else:
                 self._send(404, json.dumps({"html": "not found"}))
         except Exception as e:
             self._send(500, json.dumps({"html": f"error: {e}"}))
+
+
+# ── global-plan subprocess manager ──────────────────────────────────
+PLAN_PROC = None       # subprocess.Popen for solve_all.py
+PLAN_LOG = "/tmp/tlc-plan.log"
+
+def plan_start(force):
+    global PLAN_PROC
+    here = os.path.dirname(os.path.abspath(__file__))
+    plan_file = os.path.join(here, "global_plan.json")
+    if PLAN_PROC and PLAN_PROC.poll() is None:
+        return {"started": False, "status": "running"}
+    if not force and os.path.exists(plan_file):
+        return {"started": False, "status": "done"}
+    if force:
+        try:
+            os.remove(plan_file)
+        except FileNotFoundError:
+            pass
+    log = open(PLAN_LOG, "w")
+    PLAN_PROC = subprocess.Popen(
+        [sys.executable, os.path.join(here, "solve_all.py"), "900"],
+        cwd=here, stdout=log, stderr=subprocess.STDOUT,
+        start_new_session=True)
+    return {"started": True, "status": "running"}
+
+def plan_status():
+    here = os.path.dirname(os.path.abspath(__file__))
+    plan_file = os.path.join(here, "global_plan.json")
+    if PLAN_PROC and PLAN_PROC.poll() is None:
+        return {"status": "running"}
+    if os.path.exists(plan_file):
+        stamp = time.strftime("%H:%M", time.localtime(os.path.getmtime(plan_file)))
+        return {"status": "done", "stamp": stamp}
+    rc = PLAN_PROC.poll() if PLAN_PROC else None
+    if rc == 130:
+        return {"status": "cancelled"}
+    if rc not in (None, 0):
+        msg = ""
+        try:
+            msg = open(PLAN_LOG).read()[-300:]
+        except Exception:
+            pass
+        return {"status": "failed", "msg": msg}
+    return {"status": "idle"}
+
+def plan_cancel():
+    global PLAN_PROC
+    if PLAN_PROC and PLAN_PROC.poll() is None:
+        try:
+            os.killpg(os.getpgid(PLAN_PROC.pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
+        return {"status": "cancelled"}
+    return {"status": "idle"}
 
 def by_name(items, name):
     return next((i for i in items if i["name"].lower() == name.lower()), None)
@@ -346,23 +463,25 @@ def api_solve(body):
     chosen = None
     source = None
     gp = _load_global_plan()
-    if gp and not body.get("solo") and target["name"] in gp:
+    want_plan = body.get("plan", True)
+    if gp and want_plan and not body.get("solo") and target["name"] in gp:
         chosen = gp[target["name"]]
         source = "from the GLOBAL plan — whole-set allocation against real world counts"
     if chosen is None:
-        avail = None if (body.get("unlimited", True) and not gp) else {
+        avail = None if (not want_plan and not gp) else {
             i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
         res = solver.solve_combo(target, solver.foods_, solver.memories_,
                                  solver.humans_, avail=avail)
         if not res:
             return f"INFEASIBLE: not enough items in the world for {target['name']} at current scarcity"
         chosen, totals, matched = res
-        source = "solo solve (ignores what other humans will take)" if body.get("unlimited", True) \
-            else "solo solve (world-capped, but ignores sibling humans)"
+        source = "solo solve — ignores what the other 39 humans will take" if not want_plan \
+            else "solo solve (global plan did not cover this human)"
+        gused = None
     else:
         totals = _totals_of(chosen)
         matched = solver.satisfied(totals, solver.humans_)
-    gused = _global_usage()
+        gused = _global_usage()
     mem_names = {m["name"]: m["avail"] for m in solver.memories_}
     lines = [f"RECIPE for {target['name']}", f"  {source}"]
     exhaust = []
@@ -486,33 +605,6 @@ def api_hunt(body):
         else:
             lines.append("      ⌖ no wiki location recorded yet — check the map while exploring")
     return "\n".join(lines)
-
-def api_plan(body):
-    cap = max(1, int(body.get("cap", 1)))
-    inv = {i["name"]: cap * i["avail"] for i in solver.foods_ + solver.memories_}
-    order = sorted(solver.humans_, key=lambda h: (-h["tier"], h["cat"], h["name"]))
-    lines, fails = [], []
-    for t in order:
-        res = solver.solve_combo(t, solver.foods_, solver.memories_,
-                                 solver.humans_, avail=inv)
-        if not res:
-            fails.append(t["name"]); continue
-        chosen, totals, matched = res
-        for k, v in chosen.items():
-            inv[k] -= v
-        risky = [h["name"] for h in matched
-                 if solver.collat_weight(t, h) >= 50]
-        lines.append(f"T{t['tier']} {t['name']}")
-        for k, v in sorted(chosen.items(), key=lambda kv: (-kv[1], kv[0])):
-            lines.append(f"   {v:>3} x {k}")
-        if risky:
-            lines.append(f"   !! collateral: {', '.join(risky)}")
-    head = [f"{'SAFE' if not fails else 'PARTIAL'}: {len(order)-len(fails)}/{len(order)} humans planned"
-            + (" — all recipes risk-free" if not any('!!' in l for l in lines) else "")]
-    if fails:
-        head.append("not feasible at this scarcity: " + ", ".join(fails))
-    head.append("")
-    return "\n".join(head + lines)
 
 if __name__ == "__main__":
     import sys
