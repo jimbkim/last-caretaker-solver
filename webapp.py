@@ -5,7 +5,7 @@ Run:  .venv/bin/python webapp.py [host]   (stdlib only, no installs)
 
 Flow: committees -> humans -> recipe for the human you pick.
 """
-import json, os, re, signal, subprocess, time
+import json, os, re, signal, subprocess, sys, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import solver
@@ -144,6 +144,7 @@ body.locked #busy{pointer-events:auto}
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
  <button class="tab" data-s="combo">What would THIS grow?</button>
  <button class="tab" data-s="hunt">Hunt list</button>
+ <button class="tab" data-s="reserve">Reserve list</button>
 </div>
 
 <section id="s-tree" class="on">
@@ -195,6 +196,12 @@ body.locked #busy{pointer-events:auto}
  <button class="go" onclick="doHunt()">Show hunt list</button></div>
  <div class="small">Every memory, scarcest first, with where the wiki/community says to find it.</div>
  <pre id="result4" style="min-height:10rem">press Show hunt list…</pre>
+</section>
+
+<section id="s-reserve">
+ <div class="row"><button class="go" onclick="doReserve()">Refresh from current plan</button>
+ <span class="small">which humans claim the zero-slack memories — loot them straight into the reserve box</span></div>
+ <pre id="result5" style="min-height:10rem">loading…</pre>
 </section>
 
 <script>
@@ -301,6 +308,9 @@ async function doCombo(){
  render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
 
 // ── tab 3: plan ─────────────────────────────────────────────────────
+async function doReserve(){
+ $('result5').textContent='building…';
+ render($('result5'),await post('/api/reserve',{}));}
 async function doHunt(){
  $('result4').textContent='loading…';
  render($('result4'),await post('/api/hunt',{n:+$('huntn').value||25}));}
@@ -367,7 +377,7 @@ class H(BaseHTTPRequestHandler):
                 self._send(200, json.dumps(plan_cancel()))
                 return
             fn = {"/api/solve": api_solve, "/api/combo": api_combo,
-                  "/api/hunt": api_hunt}.get(self.path)
+                  "/api/hunt": api_hunt, "/api/reserve": api_reserve}.get(self.path)
             if fn:
                 self._send(200, json.dumps({"html": fn(body)}))
             else:
@@ -589,6 +599,20 @@ def api_combo(body):
     if unknown:
         lines.append(f"\n(unknown items ignored: {', '.join(unknown)})")
     return "\n".join(lines)
+
+def api_reserve(body):
+    import subprocess as sp
+    here = os.path.dirname(os.path.abspath(__file__))
+    plan_src = "global_plan.json" if os.path.exists(os.path.join(here, "global_plan.json")) else "plan.json (greedy — global solve may re-assign)"
+    try:
+        sp.run([sys.executable, os.path.join(here, "make_reserve.py")],
+               cwd=here, capture_output=True, timeout=30, check=True)
+        txt = open(os.path.join(here, "RESERVE.md")).read()
+    except Exception as e:
+        return "could not build reserve list: " + str(e)
+    # light markdown -> plain pre text
+    txt = re.sub(r"^#+ ", "", txt, flags=re.M).replace("**", "").replace("*Where:*", "Where:").replace("`","")
+    return f"(source: {plan_src})\n\n" + txt
 
 def api_hunt(body):
     n = max(5, int(body.get("n", 25)))
