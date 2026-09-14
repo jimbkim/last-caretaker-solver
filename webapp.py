@@ -38,7 +38,13 @@ button.tab{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:.45
 button.tab.on{background:#1f6feb;border-color:#1f6feb;color:#fff}
 section{display:none} section.on{display:block}
 .cols{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.4fr);gap:1rem}
-@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.cols2{display:grid;grid-template-columns:minmax(300px,1fr) minmax(360px,1.2fr);gap:1rem;align-items:start}
+@media(max-width:820px){.cols,.cols2{grid-template-columns:1fr}}
+.inputs{background:#10141b;border:1px solid #21262d;border-radius:10px;padding:1rem}
+.lbl{color:#7d8590;font-size:.75rem;letter-spacing:.12em;margin-bottom:.45rem}
+.sep{display:flex;align-items:center;gap:.8rem;margin:1.3rem 0 .8rem;color:#7d8590;font-size:.75rem;letter-spacing:.2em}
+.sep::before,.sep::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,#30363d,transparent)}
+.sep span{border:1px solid #30363d;border-radius:999px;padding:.15rem .9rem;background:#0d1117}
 .panel{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.7rem}
 .committee{border:1px solid #30363d;border-radius:6px;padding:.5rem .7rem;margin-bottom:.45rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
 .committee:hover{border-color:#1f6feb}
@@ -70,16 +76,21 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 </div>
 
 <section id="s-tree" class="on">
- <div class="cols">
-  <div>
-   <div class="panel" id="committeeList"></div>
-   <div class="panel" id="humanList" style="margin-top:.6rem"><span class="small">pick a committee…</span></div>
-  </div>
-  <div>
-   <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b></div>
-   <pre id="recipe">pick a committee, then a human — the recipe appears here.</pre>
+ <div class="inputs">
+  <div class="cols2">
+   <div>
+    <div class="lbl">1 · COMMITTEE</div>
+    <div class="panel" id="committeeList"></div>
+   </div>
+   <div>
+    <div class="lbl">2 · HUMAN</div>
+    <div class="panel" id="humanList" style="min-height:4rem"><span class="small">pick a committee…</span></div>
+   </div>
   </div>
  </div>
+ <div class="sep"><span>OUTPUT</span></div>
+ <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b></div>
+ <pre id="recipe">pick a committee, then a human — the recipe appears here.</pre>
 </section>
 
 <section id="s-combo">
