@@ -287,8 +287,13 @@ async function pollPlan(){
  else if(r.status==='cancelled'){$('recipe').textContent='plan cancelled — back to single solves.';}
  else {$('planMode').checked=false;$('recipe').textContent='plan failed: '+(r.msg||'unknown error');}}
 function initPlanUI(){
- if(DATA.hasPlan){$('planMode').checked=true;$('replanBtn').style.display='';$('planStamp').textContent='  · cached';}
-}
+ post('/api/plan/status',{}).then(r=>{
+  if(r.status==='done'){
+   $('planMode').checked=true;$('replanBtn').style.display='';
+   $('planStamp').textContent='  · last ran '+r.stamp+' — recipes come from the global plan';}
+  else if(r.status==='running'){
+   $('planMode').checked=true;$('recipe').textContent='global plan calculating…';
+   startPlan(false);}});}
 initPlanUI();
 async function cancelPlan(){
  await post('/api/plan/cancel',{});
