@@ -67,8 +67,19 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .breadcrumb{margin-bottom:.6rem;color:#7d8590}
 .breadcrumb b{color:#e6edf3}
 #recipe{min-height:10rem}
+.legend{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;color:#7d8590;font-size:.8rem;margin:.2rem 0 .6rem}
+.legend .dot{opacity:.5}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab</span></h1>
+<div class="legend">
+ <span><span class="tier1">T1</span> common</span><span class="dot">·</span>
+ <span><span class="tier2">T2</span> skilled</span><span class="dot">·</span>
+ <span><span class="tier3">T3</span> expert</span><span class="dot">·</span>
+ <span><span class="tier4">T4</span> apex — rarest items</span><span class="dot">·</span>
+ <span class="ok">SAFE</span> = no same-or-higher-tier match, target guaranteed<span class="dot">·</span>
+ <span class="bad">RISK</span> = pod may come out as something else<span class="dot">·</span>
+ <span class="warn">!!</span> = collateral to watch
+</div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
  <button class="tab" data-s="combo">What would THIS grow?</button>
