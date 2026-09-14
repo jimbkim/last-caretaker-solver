@@ -27,6 +27,38 @@ COMMITTEES = [
     ("Field Continuance", 3, ["Field Research Scientist", "Existential Chancellor", "Station Roamer", "Doctor"]),
 ]
 
+# Humans that exist outside the committee structure.
+SPECIAL = [
+    ("Star Child", "Special",
+     "Grown by inserting the Star Child MEMORY itself (not a stat recipe).\n"
+     "HOW TO GET IT: complete committee work until the quest 'True Choices' fires\n"
+     "  (reported to unlock after Habitat Care is formed). It reveals a map marker:\n"
+     "  Courier Sieve Node Facility, eastern map, coords 169,-2 (guarded by an\n"
+     "  Arch Angel + Talon Shipshark). Grab the Star Child memory there.\n"
+     "THE CHOICE: the grown Star Child can be DESTROYED or LAUNCHED — both close\n"
+     "  the quest; players report different dialogue reactions. Decide on purpose.\n"
+     "  Note: a Steam player found being 9 seeds short late-game painful, so grow\n"
+     "  your committee humans BEFORE using the last seeds on this one."),
+]
+
+# Curated hunt notes for memories the wiki location-scrape can't answer.
+MEMORY_NOTES = {
+    "Ash Notebook": "ALL 10 are in the maze at The Transposium — one trip, no luck needed.",
+    "Oath Token": "Not on the wiki yet. Community reports: unmarked mystery — scan the statue(s) to trigger it; NOT the 'Before the Archives' quest. Reportedly REUSABLE (survives growth).",
+    "Star Child": "Quest 'True Choices' -> Courier Sieve Node Facility (169,-2), east map.",
+    "Porcine Vocal Interface": "Helios Reserve Lyra.",
+}
+
+def _load_locations():
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "memory_locations.json")
+    try:
+        return json.load(open(p))
+    except Exception:
+        return {}
+
+MEMORY_LOCATIONS = _load_locations()
+
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>Last Caretaker — Human Lab</title>
 <style>
@@ -73,6 +105,8 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .dotc{display:inline-block;width:.65rem;height:.65rem;border-radius:50%}
 .dotc.t1{background:#7d8590}.dotc.t2{background:#7ee787}.dotc.t3{background:#a5d6ff}.dotc.t4{background:#f778ba}
 .smalltxt{font-size:.75rem;margin-left:.35rem}
+.loc{color:#a5d6ff}
+.committee.special{border-style:dashed}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab</span></h1>
 <div class="legend">
@@ -84,11 +118,13 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
  <span class="bad">RISK</span> = pod may come out as something else<span class="dot">·</span>
  <span class="warn">!!</span> = collateral to watch<span class="dot">·</span>
  <span>◆ = memory — only WorldCount exist, fixed</span><span class="dot">·</span>
- <span>↻ = food — renewable, craft from organics</span>
+ <span>↻ = food — renewable, craft from organics</span><span class="dot">·</span>
+ <span class="loc">⌖ = where to find it</span>
 </div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
  <button class="tab" data-s="combo">What would THIS grow?</button>
+ <button class="tab" data-s="hunt">Hunt list</button>
  <button class="tab" data-s="plan">Full plan (all 40)</button>
 </div>
 
@@ -122,6 +158,14 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
  <pre id="result2" style="min-height:8rem">tap items, then Evaluate…</pre>
 </section>
 
+<section id="s-hunt">
+ <div class="row"><label class="small">rarest N memories
+ <input type="number" id="huntn" value="25" min="5" max="60" style="width:4rem"></label>
+ <button class="go" onclick="doHunt()">Show hunt list</button></div>
+ <div class="small">Every memory, scarcest first, with where the wiki/community says to find it.</div>
+ <pre id="result4" style="min-height:10rem">press Show hunt list…</pre>
+</section>
+
 <section id="s-plan">
  <div class="row"><label class="small">availability multiplier (saves re-run)
  <input type="number" id="cap" value="1" min="1" max="20"></label>
@@ -149,6 +193,17 @@ DATA.committees.forEach(([cname,ctier,members],ci)=>{
    return p?`<i class="dotc t${p.tier}" title="T${p.tier} ${base}"></i>`:'';}).join('');
  d.innerHTML=`<span>${cname}</span><span class="dots">${dots}<span class="tier${ctier} smalltxt"> unlock T${ctier}</span></span>`;
  d.onclick=()=>showHumans(ci,cname,d); $('committeeList').append(d);});
+// special non-committee humans
+DATA.specials.forEach(([name,,notes],si)=>{
+ const d=document.createElement('div');d.className='committee special';
+ d.innerHTML=`<span>${name}</span><span class="dots"><i class="dotc t4"></i><span class="smalltxt small">not in a committee</span></span>`;
+ d.onclick=()=>{
+  document.querySelectorAll('.committee').forEach(x=>x.classList.toggle('on',x===d));
+  $('humanList').innerHTML='<span class="small">special — no tier recipe</span>';
+  document.querySelectorAll('.human').forEach(x=>x.classList.remove('on'));
+  $('crumb').innerHTML=`Special → ${name} → <b>notes</b>`;
+  $('recipe').textContent=notes;};
+ $('committeeList').append(d);});
 function showHumans(ci,cname,el){
  document.querySelectorAll('.committee').forEach(x=>x.classList.toggle('on',x===el));
  curCommittee=cname; curHuman=null;
@@ -183,6 +238,10 @@ async function doCombo(){
  render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
 
 // ── tab 3: plan ─────────────────────────────────────────────────────
+async function doHunt(){
+ $('result4').textContent='loading…';
+ render($('result4'),await post('/api/hunt',{n:+$('huntn').value||25}));}
+
 async function doPlan(){
  $('result3').textContent='planning 40 humans — ~1 minute, hold tight…';
  render($('result3'),await post('/api/plan',{cap:+$('cap').value||1}));}
@@ -201,6 +260,7 @@ function render(el,o){
    .replace(/^(NOTE:.*)$/,'<b class="warn">$1</b>')
    .replace(/^(  MEMORIES — .*)$/,'<b>$1</b>')
    .replace(/^(  FOODS — .*)$/,'<b class="ok">$1</b>')
+   .replace(/^(      ⌖ .*)$/,'<span class="loc">$1</span>')
    .replace(/^(mental stats .*)$/,'<b>$1</b>')).join('\\n');}
 </script></body></html>"""
 
@@ -219,6 +279,7 @@ class H(BaseHTTPRequestHandler):
         if self.path in ("/", "/index.html"):
             data = {
                 "committees": COMMITTEES,
+                "specials": SPECIAL,
                 "professions": [{"name": h["name"], "tier": h["tier"],
                                  "req": {k: int(v) for k, v in h["req"].items()}}
                                 for h in solver.humans_],
@@ -237,7 +298,7 @@ class H(BaseHTTPRequestHandler):
         try:
             body = self._json()
             fn = {"/api/solve": api_solve, "/api/combo": api_combo,
-                  "/api/plan": api_plan}.get(self.path)
+                  "/api/hunt": api_hunt, "/api/plan": api_plan}.get(self.path)
             if fn:
                 self._send(200, json.dumps({"html": fn(body)}))
             else:
@@ -271,6 +332,13 @@ def api_solve(body):
                 tag = "  !! ENTIRE world supply"
                 exhaust.append(k)
             mem_lines.append(f"  ◆ {v:>3} x {k}{tag}")
+            where = MEMORY_LOCATIONS.get(k)
+            note = MEMORY_NOTES.get(k)
+            if note:
+                mem_lines.append(f"      ⌖ {note}")
+            elif where:
+                mem_lines.append(f"      ⌖ reported at: {', '.join(where[:5])}"
+                                 + ("…" if len(where) > 5 else ""))
         else:
             food_lines.append(f"  ↻ {v:>3} x {k}")
     lines.append("")
@@ -356,6 +424,22 @@ def api_combo(body):
             lines.append(f"  T{h['tier']} {h['name']}: short {gaps}")
     if unknown:
         lines.append(f"\n(unknown items ignored: {', '.join(unknown)})")
+    return "\n".join(lines)
+
+def api_hunt(body):
+    n = max(5, int(body.get("n", 25)))
+    lines = [f"HUNT LIST — scarcest {n} memories (all counts are the TOTAL that exist):", ""]
+    for m in sorted(solver.memories_, key=lambda m: m["avail"])[:n]:
+        note = MEMORY_NOTES.get(m["name"])
+        where = MEMORY_LOCATIONS.get(m["name"])
+        lines.append(f"  ×{m['avail']:<3} ◆ {m['name']}")
+        if note:
+            lines.append(f"      ⌖ {note}")
+        elif where:
+            lines.append(f"      ⌖ reported at: {', '.join(where[:6])}"
+                         + ("…" if len(where) > 6 else ""))
+        else:
+            lines.append("      ⌖ no wiki location recorded yet — check the map while exploring")
     return "\n".join(lines)
 
 def api_plan(body):

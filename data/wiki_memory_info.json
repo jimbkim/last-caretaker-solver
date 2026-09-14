@@ -1,0 +1,380 @@
+{
+ "Angerkoski": {
+  "rarity": "Common",
+  "desc": "Roz",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Ash Notebook": {
+  "rarity": "Artifact",
+  "desc": "Personal journal from previous Transposium occupants",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker.",
+   "Ten s can be found in the maze"
+  ]
+ },
+ "Assembly Instructions": {
+  "rarity": "Poor",
+  "desc": "Sequential diagrams guiding assembly. Shows correct order, direction markers, and requires step-by-step interpretation.",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Basketball": {
+  "rarity": "Poor",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "It is often found near a basketball hoop."
+  ]
+ },
+ "Biology Notes": {
+  "rarity": "Uncommon",
+  "desc": "Journal with species sketches. Documents lifeforms, requires monitoring of populations, records environmental decline.",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Blueprints": {
+  "rarity": "Rare",
+  "desc": "Technical drawings of increasing complexity. Reveal structural relationships, require sustained investigation, enable analysis.",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker.",
+   "== Gallery ==\n<gallery>\nFile:Blueprint (1).png\nFile:Blueprint (2).png\nFile:Blueprint (3).png\nFile:Blueprint (4).png\n</gallery>"
+  ]
+ },
+ "Bowling Ball": {
+  "rarity": "Poor",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "It is often found with bowling pins."
+  ]
+ },
+ "Bowling Pin": {
+  "rarity": "Poor",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "It is often found near bowling balls."
+  ]
+ },
+ "Breakdown": {
+  "rarity": "Common",
+  "desc": "Roz",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Camera": {
+  "rarity": "Uncommon",
+  "desc": "Device capturing visual data. Records moving and static subjects, requires understanding of light, and preserves moments.",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Cards": {
+  "rarity": "Uncommon",
+  "desc": "Printed message cards. Transmit emotional patterns, contain communication symbols, initiate basic connections.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Chiptropolis": {
+  "rarity": "Common",
+  "desc": "Jogeir",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Cognitive Cards": {
+  "rarity": "Rare",
+  "desc": "Cards demonstrate solving methods. Require sustained focus, develop logical deduction skills.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Commander's Log": {
+  "rarity": "Rare",
+  "desc": "Written strategic records. Document decisions and outcomes, shows leadership patterns, requires systematic logging.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Compass": {
+  "rarity": "Rare",
+  "desc": "Magnetic navigation tool. Shows orientation, needs environmental interpretation, aids directional planning.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Crayon": {
+  "rarity": "Common",
+  "desc": "Color application tool. Creates visual patterns, requires minimal control, introduces color mixing concepts.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Encyclopedia": {
+  "rarity": "Rare",
+  "desc": "Bound paper sheets storing symbols and images. Explains reality, organized sequentially, informing processing.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "First Aid": {
+  "rarity": "Uncommon",
+  "desc": "Essential health guide with disciplined protocols, clear procedures, systematic, adaptable responses.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Fluctuations": {
+  "rarity": "Common",
+  "desc": "Roz",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Guitar": {
+  "rarity": "Uncommon",
+  "desc": "Sound device creating patterns through finger placement, teaches sequences, enables tonal communication.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Guitar Slinger": {
+  "rarity": "Common",
+  "desc": "Jogeir",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Keys to Imagination": {
+  "rarity": "Common",
+  "desc": "Jogeir",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Lonelies": {
+  "rarity": "Common",
+  "desc": "Roz",
+  "prose": [
+   "[[]] is a Music Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Love Letters": {
+  "rarity": "Uncommon",
+  "desc": "Old written communications. Shows relationship patterns over time, reveals emotional connections and personal history.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Maps": {
+  "rarity": "Uncommon",
+  "desc": "Visual geographic representations. Indicates spatial relationships, navigational routes. Requires symbolic marker interpretation.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Meditation": {
+  "rarity": "Common",
+  "desc": "Mindfulness guide promoting disciplined habits, emotional control, sustained focus, self-awareness.",
+  "prose": [
+   "Meditation is a Memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Mirror": {
+  "rarity": "Common",
+  "desc": "Reflectice surface capturing silent truths, questioning existence.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Music Notes": {
+  "rarity": "Uncommon",
+  "desc": "Symbols on staffs indicating sound sequences, guides pitch, rhythm accuracy, enables coordinated audio reproduction.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Mystery Box": {
+  "rarity": "Common",
+  "desc": "More questions are raised than ever answered. Midday 1st Sat in Aug.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "== Trivia ==\n\nThe description relates to the Trials Evolution Riddle where the Creative Director Antti Ilvessuo set things in motion for 1 of 5 keys to unlock a box under the Eiffel Tower on the 1st Saturday of August in the year 2113."
+  ]
+ },
+ "Oath Token": {
+  "error": "no wiki page"
+ },
+ "PECO Athletics - 100m Dash": {
+  "rarity": "Common",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "PECO Athletics - Javelin": {
+  "rarity": "Common",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "PECO Athletics - Triple Jump": {
+  "rarity": "Common",
+  "desc": "",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Plans": {
+  "rarity": "Uncommon",
+  "desc": "Coordinated action diagrams. Show planned sequences, require understanding multi-unit operations.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Porcine Vocal Interface": {
+  "rarity": "Artifact",
+  "desc": "A mechanical whistle fitted to Project CANTICLE subjects.",
+  "prose": [
+   "The  is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Poushki": {
+  "rarity": "Common",
+  "desc": "Jogeir",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Programming Manual": {
+  "rarity": "Uncommon",
+  "desc": "Structured guide teaching algorithms, logical reasoning, disciplined thinking and D-Team Failure generation.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Second Reality": {
+  "rarity": "Common",
+  "desc": "Purple Motion",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Small Human Art": {
+  "rarity": "Common",
+  "desc": "Early communication artifact. Shows basic patterns, emotional expression attempts, demonstrates early communication.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker.",
+   "== Gallery ==\n<gallery>\nFile:Small Human Art (7).png\nFile:Small Human Art (6).png\nFile:Small Human Art (5).png\nFile:Small Human Art (4).png\nFile:Small Human Art (3).png\nFile:Small Human Art (2).png\nFile:Small Human Art (1).png\n</gallery>"
+  ]
+ },
+ "Small Tree": {
+  "rarity": "Uncommon",
+  "desc": "Living plant in container. Needs repeated small adjustments, demonstrates growth patterns, shows care results over time.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Starshine": {
+  "rarity": "Common",
+  "desc": "Purple Motion",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Stopwatch": {
+  "rarity": "Uncommon",
+  "desc": "Time measurement device. Tracks action durations, marks completion, and supports waiting protocols.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Sudoku Book": {
+  "rarity": "Uncommon",
+  "desc": "Numerical logic puzzles enhance reasoning, pattern recognition, sustained focus, systematic problem-solving.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Survival Diagrams": {
+  "rarity": "Rare",
+  "desc": "Photos documenting crisis adaptations. Records resourceful solutions, demonstrates resilient behaviors.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Teddy Bear": {
+  "rarity": "Common",
+  "desc": "Former protector, now a quiet traveler of ocean landscapes carrying memories.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "The Art of War": {
+  "rarity": "Rare",
+  "desc": "Ancient leadership and strategy manual. Offers tactical insights, disciplined planning, clear communication, adaptive thinking.",
+  "prose": [
+   "[[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Tommy": {
+  "rarity": "Common",
+  "desc": "Soft synthetic companion shaped like a Tommy the t.rex, Provides comfort, supports emotional stability, and encourages safe bonding.",
+  "prose": [
+   "[[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Touchin' the Chip": {
+  "rarity": "Common",
+  "desc": "Jogeir",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Travel Journal": {
+  "rarity": "Uncommon",
+  "desc": "Written movement records, Contains locations and experiences, documents adaptation, stores environmental responses.",
+  "prose": [
+   "The [[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Turbulence": {
+  "rarity": "Common",
+  "desc": "Purple Motion",
+  "prose": [
+   "[[]] is a Cartridge memory item found in the world of The Last Caretaker.",
+   "Category:Cartridges"
+  ]
+ },
+ "Where's Tommy": {
+  "rarity": "Uncommon",
+  "desc": "Visual search book fostering detailed observation, sustained attention, patience, focus.",
+  "prose": [
+   "[[]] is a memory found in the world of The Last Caretaker."
+  ]
+ },
+ "Star Child": {
+  "error": "no wiki page"
+ }
+}
