@@ -1,52 +1,85 @@
 #!/usr/bin/env python3
 """Web UI for the Last Caretaker solver:  http://127.0.0.1:8765
 
-Run:  .venv/bin/python webapp.py   (stdlib only, no installs)
+Run:  .venv/bin/python webapp.py [host]   (stdlib only, no installs)
+
+Flow: committees -> humans -> recipe for the human you pick.
 """
-import json, html
+import json, re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs
 
 import solver
 
 PORT = 8765
 
+# From wiki /Committees — the four members of each of the 10 committees,
+# with each committee's unlock tier.
+COMMITTEES = [
+    ("Deck Operations", 1, ["Maintenance Engineer", "Basic Supplier", "Nutrient Handler", "Door Jammer"]),
+    ("Habitat Care", 1, ["Room Supervisor", "Health Assistant", "Teacher", "Lab Technician"]),
+    ("Transit & Distribution", 1, ["Systems Engineer", "Distributor", "Growth Specialist", "Guard"]),
+    ("Power & Security", 1, ["Energy Engineer", "Resource Director", "Station Quartermaster", "Station Protector"]),
+    ("Cognitive Resilience", 2, ["Theoretical Scientist", "Neuro Specialist", "Professor", "Star Analyzer"]),
+    ("Culture & Memory", 2, ["Visual Technician", "Sculptor", "Cultural Archivist", "Manual Holder"]),
+    ("Governance & Logistics", 2, ["Settlement Governor", "Logistics High Command", "Biosphere Director", "Guardian of Humanity"]),
+    ("Deep Systems", 3, ["Quantum Engineer", "Quantum Physicist", "Neural Architect", "Sustenance Architect"]),
+    ("Meaning & Frontier", 3, ["Existential Expressionist", "Frontier Explorer", "Mission Seeker", "Colonel of Humanity"]),
+    ("Field Continuance", 3, ["Field Research Scientist", "Existential Chancellor", "Station Roamer", "Doctor"]),
+]
+
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>Last Caretaker — Human Lab</title>
 <style>
 :root{color-scheme:dark}
-body{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#0b0e13;color:#c9d1d9;max-width:980px;margin:2rem auto;padding:0 1rem}
-h1{font-size:1.3rem;color:#e6edf3} h1 span{color:#7d8590;font-weight:normal}
-.tabs{display:flex;gap:.5rem;margin:1rem 0}
+body{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#0b0e13;color:#c9d1d9;max-width:1080px;margin:1.5rem auto;padding:0 1rem}
+h1{font-size:1.25rem;color:#e6edf3;margin-bottom:.2rem} h1 span{color:#7d8590;font-weight:normal}
+.tabs{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
 button.tab{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:.45rem .9rem;border-radius:6px;cursor:pointer;font:inherit}
 button.tab.on{background:#1f6feb;border-color:#1f6feb;color:#fff}
 section{display:none} section.on{display:block}
-.row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem}
-select,input[type=text]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:.4rem .6rem;border-radius:6px;font:inherit;max-width:340px}
-button.go{background:#238636;border:1px solid #2ea043;color:#fff;padding:.45rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
-.chips{display:flex;flex-wrap:wrap;gap:.35rem;max-height:200px;overflow:auto;border:1px solid #30363d;padding:.5rem;border-radius:6px;background:#0d1117;flex:1 1 100%}
+.cols{display:grid;grid-template-columns:minmax(300px,1fr) minmax(420px,1.4fr);gap:1rem}
+@media(max-width:820px){.cols{grid-template-columns:1fr}}
+.panel{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:.7rem}
+.committee{border:1px solid #30363d;border-radius:6px;padding:.5rem .7rem;margin-bottom:.45rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.committee:hover{border-color:#1f6feb}
+.committee.on{border-color:#1f6feb;background:#161b22}
+.human{border:1px solid #30363d;border-radius:6px;padding:.4rem .7rem;margin-bottom:.4rem;cursor:pointer;display:flex;justify-content:space-between}
+.human:hover{border-color:#f778ba}
+.human.on{border-color:#f778ba;background:#161b22}
+.req{color:#7d8590;font-size:.82em}
+pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.8rem;white-space:pre-wrap;overflow:auto;margin:0}
+.tier4{color:#f778ba;font-weight:bold}.tier3{color:#a5d6ff}.tier2{color:#7ee787}.tier1{color:#7d8590}
+.ok{color:#7ee787}.bad{color:#ff7b72}.warn{color:#f2cc60}
+.small{color:#7d8590;font-size:.85em}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;max-height:180px;overflow:auto;border:1px solid #30363d;padding:.5rem;border-radius:6px;background:#0d1117}
 .chip{border:1px solid #30363d;border-radius:999px;padding:.1rem .6rem;cursor:pointer;user-select:none;background:#161b22}
 .chip.sel{background:#1f6feb;border-color:#1f6feb;color:#fff}
 .chip .ct{color:#7d8590;font-size:.8em}
-pre{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.8rem;white-space:pre-wrap;overflow:auto}
-.tier4{color:#f778ba;font-weight:bold}.tier3{color:#a5d6ff}.tier2{color:#7ee787}.tier1{color:#7d8590}
-.ok{color:#7ee787}.bad{color:#ff7b72}.warn{color:#f2cc60}
-table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #21262d;padding:.25rem .5rem;text-align:left;vertical-align:top}
-.small{color:#7d8590;font-size:.85em}
-#result{min-height:8rem}
+.row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.8rem}
+button.go{background:#238636;border:1px solid #2ea043;color:#fff;padding:.45rem 1rem;border-radius:6px;cursor:pointer;font:inherit}
+input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:.4rem;width:4rem;border-radius:6px;font:inherit}
+.breadcrumb{margin-bottom:.6rem;color:#7d8590}
+.breadcrumb b{color:#e6edf3}
+#recipe{min-height:10rem}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab</span></h1>
 <div class="tabs">
- <button class="tab on" data-s="solve">1 · What do I grow?</button>
- <button class="tab" data-s="combo">2 · What would THIS grow?</button>
- <button class="tab" data-s="plan">3 · Fill all committees</button>
+ <button class="tab on" data-s="tree">Committees → humans → recipes</button>
+ <button class="tab" data-s="combo">What would THIS grow?</button>
+ <button class="tab" data-s="plan">Full plan (all 40)</button>
 </div>
 
-<section id="s-solve" class="on">
- <div class="row"><select id="target"></select><button class="go" onclick="doSolve()">Solve</button>
- <label class="small"><input type="checkbox" id="unlimited" checked> ignore world scarcity</label></div>
- <div class="small">Finds the food+memory combo that grows the target while matching no same-or-higher-tier profession.</div>
- <pre id="result">pick a profession…</pre>
+<section id="s-tree" class="on">
+ <div class="cols">
+  <div>
+   <div class="panel" id="committeeList"></div>
+   <div class="panel" id="humanList" style="margin-top:.6rem"><span class="small">pick a committee…</span></div>
+  </div>
+  <div>
+   <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b></div>
+   <pre id="recipe">pick a committee, then a human — the recipe appears here.</pre>
+  </div>
+ </div>
 </section>
 
 <section id="s-combo">
@@ -58,35 +91,71 @@ table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #21262d;
    <span class="small">selected: <b id="selCount">0</b> items</span>
    <button class="go" onclick="doCombo()">Evaluate</button>
    <button class="tab" onclick="clearSel()">clear</button></div>
- <pre id="result2">tap items, then Evaluate…</pre>
+ <pre id="result2" style="min-height:8rem">tap items, then Evaluate…</pre>
 </section>
 
 <section id="s-plan">
  <div class="row"><label class="small">availability multiplier (saves re-run)
- <input type="number" id="cap" value="1" min="1" max="20" style="width:4rem"></label>
+ <input type="number" id="cap" value="1" min="1" max="20"></label>
  <button class="go" onclick="doPlan()">Generate plan</button></div>
- <div class="small">Grows all 40 committee humans, T4 first, respecting world item counts. Takes ~1 min.</div>
- <pre id="result3">press Generate…</pre>
+ <div class="small">All 40 committee humans, T4 first, respecting world item counts. Takes ~1 min.</div>
+ <pre id="result3" style="min-height:10rem">press Generate…</pre>
 </section>
 
 <script>
 const DATA = %%DATA%%;
 const $ = id => document.getElementById(id);
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
- document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
+document.querySelectorAll('.tabs .tab').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.toggle('on',x===b));
  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+b.dataset.s));
 });
-DATA.professions.forEach(p=>{
- const o=document.createElement('option');o.value=p.name;
- o.textContent=`T${p.tier} · ${p.name.replace(/ T\\d+$/,'')}`;
- o.className='tier'+p.tier;$('target').append(o);});
+const profByBase = {};
+DATA.professions.forEach(p=>{profByBase[p.name.replace(/ T\\d+$/,'')]=p;});
+
+// ── tab 1: committees -> humans -> recipe ──────────────────────────
+let curCommittee=null, curHuman=null;
+DATA.committees.forEach(([cname,ctier,members],ci)=>{
+ const d=document.createElement('div');d.className='committee';
+ d.innerHTML=`<span>${cname}</span><span class="tier${ctier}">committee unlock T${ctier}</span>`;
+ d.onclick=()=>showHumans(ci,cname,d); $('committeeList').append(d);});
+function showHumans(ci,cname,el){
+ document.querySelectorAll('.committee').forEach(x=>x.classList.toggle('on',x===el));
+ curCommittee=cname; curHuman=null;
+ const hl=$('humanList'); hl.innerHTML='';
+ DATA.committees[ci][2].forEach(base=>{
+  const p=profByBase[base]; if(!p) return;
+  const h=document.createElement('div');h.className='human';
+  const reqs=Object.entries(p.req).map(([k,v])=>`${k}≥${v}`).join('  ');
+  h.innerHTML=`<span class="tier${p.tier}">T${p.tier} ${base}</span>`;
+  h.onclick=()=>{document.querySelectorAll('.human').forEach(x=>x.classList.toggle('on',x===h));
+    showRecipe(p.name,cname,base);};
+  const sub=document.createElement('div');sub.className='req';sub.textContent=reqs;
+  h.append(sub); hl.append(h);});
+}
+async function showRecipe(full,committee,base){
+ curHuman=base;
+ $('crumb').innerHTML=`${committee} → ${base} → <b>recipe</b>`;
+ $('recipe').textContent='solving…';
+ render($('recipe'),await post('/api/solve',{target:full}));}
+
+// ── tab 2: combo ────────────────────────────────────────────────────
 function chips(el,items){items.forEach(it=>{
  const c=document.createElement('span');c.className='chip';
- c.innerHTML=`${it.name.replace(/ T\\d+$/,'')} <span class="ct">×${it.avail}</span>`;
+ c.innerHTML=`${it.name} <span class="ct">×${it.avail}</span>`;
  c.dataset.name=it.name;c.onclick=()=>{c.classList.toggle('sel');count()};el.append(c);});}
 chips($('foodChips'),DATA.foods); chips($('memChips'),DATA.memories);
 function count(){$('selCount').textContent=document.querySelectorAll('.chip.sel').length}
 function clearSel(){document.querySelectorAll('.chip.sel').forEach(c=>c.classList.remove('sel'));count()}
+async function doCombo(){
+ const pick=k=>[...document.querySelectorAll('#'+k+' .chip.sel')].map(c=>c.dataset.name);
+ $('result2').textContent='computing…';
+ render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
+
+// ── tab 3: plan ─────────────────────────────────────────────────────
+async function doPlan(){
+ $('result3').textContent='planning 40 humans — ~1 minute, hold tight…';
+ render($('result3'),await post('/api/plan',{cap:+$('cap').value||1}));}
+
 async function post(url,body){
  const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
  return await r.json();}
@@ -97,24 +166,14 @@ function render(el,o){
    colorProf(esc(l))
    .replace(/^(SAFE:.*)$/,'<b class="ok">$1</b>')
    .replace(/^(RISK:.*)$/,'<b class="bad">$1</b>')
-   .replace(/^(!! .*|→ DANGER.*)$/,'<b class="warn">$1</b>')).join('\\n');}
-async function doSolve(){
- $('result').textContent='solving…';
- render($('result'),await post('/api/solve',{target:$('target').value,unlimited:$('unlimited').checked}));}
-async function doCombo(){
- const pick=k=>[...document.querySelectorAll('#'+k+' .chip.sel')].map(c=>c.dataset.name);
- $('result2').textContent='computing…';
- render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
-async function doPlan(){
- $('result3').textContent='planning 40 humans — ~1 minute, hold tight…';
- render($('result3'),await post('/api/plan',{cap:+$('cap').value||1}));}
+   .replace(/^(!! .*)$/,'<b class="warn">$1</b>')).join('\\n');}
 </script></body></html>"""
 
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
 
     def _send(self, code, body, ctype="text/html; charset=utf-8"):
-        b = body.encode()
+        b = body.encode() if isinstance(body, str) else body
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(b)))
@@ -124,7 +183,10 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             data = {
-                "professions": [{"name": h["name"], "tier": h["tier"]} for h in solver.humans_],
+                "committees": COMMITTEES,
+                "professions": [{"name": h["name"], "tier": h["tier"],
+                                 "req": {k: int(v) for k, v in h["req"].items()}}
+                                for h in solver.humans_],
                 "foods": [{"name": f["name"], "avail": f["avail"]} for f in solver.foods_],
                 "memories": [{"name": m["name"], "avail": m["avail"]} for m in solver.memories_],
             }
@@ -139,12 +201,10 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             body = self._json()
-            if self.path == "/api/solve":
-                self._send(200, json.dumps({"html": api_solve(body)}))
-            elif self.path == "/api/combo":
-                self._send(200, json.dumps({"html": api_combo(body)}))
-            elif self.path == "/api/plan":
-                self._send(200, json.dumps({"html": api_plan(body)}))
+            fn = {"/api/solve": api_solve, "/api/combo": api_combo,
+                  "/api/plan": api_plan}.get(self.path)
+            if fn:
+                self._send(200, json.dumps({"html": fn(body)}))
             else:
                 self._send(404, json.dumps({"html": "not found"}))
         except Exception as e:
