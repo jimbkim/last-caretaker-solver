@@ -396,6 +396,8 @@ def plan_start(force):
     plan_file = os.path.join(here, "global_plan.json")
     if PLAN_PROC and PLAN_PROC.poll() is None:
         return {"started": False, "status": "running"}
+    if _orphan_solver_pid():
+        return {"started": False, "status": "running"}
     if not force and os.path.exists(plan_file):
         return {"started": False, "status": "done"}
     if force:
@@ -410,10 +412,28 @@ def plan_start(force):
         start_new_session=True)
     return {"started": True, "status": "running"}
 
+def _orphan_solver_pid():
+    """solve_all.py may outlive a webapp restart; find it by cmdline."""
+    try:
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit():
+                continue
+            try:
+                cl = open(f"/proc/{pid}/cmdline", "rb").read().decode(errors="replace")
+            except OSError:
+                continue
+            if "solve_all.py" in cl:
+                return int(pid)
+    except OSError:
+        pass
+    return None
+
 def plan_status():
     here = os.path.dirname(os.path.abspath(__file__))
     plan_file = os.path.join(here, "global_plan.json")
     if PLAN_PROC and PLAN_PROC.poll() is None:
+        return {"status": "running"}
+    if _orphan_solver_pid():
         return {"status": "running"}
     if os.path.exists(plan_file):
         stamp = time.strftime("%H:%M", time.localtime(os.path.getmtime(plan_file)))
@@ -432,13 +452,21 @@ def plan_status():
 
 def plan_cancel():
     global PLAN_PROC
+    killed = False
     if PLAN_PROC and PLAN_PROC.poll() is None:
         try:
             os.killpg(os.getpgid(PLAN_PROC.pid), signal.SIGTERM)
+            killed = True
         except (ProcessLookupError, PermissionError):
             pass
-        return {"status": "cancelled"}
-    return {"status": "idle"}
+    pid = _orphan_solver_pid()
+    if pid:
+        try:
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
+            killed = True
+        except (ProcessLookupError, PermissionError):
+            pass
+    return {"status": "cancelled" if killed else "idle"}
 
 def by_name(items, name):
     return next((i for i in items if i["name"].lower() == name.lower()), None)
