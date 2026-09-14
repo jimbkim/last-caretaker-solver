@@ -275,7 +275,9 @@ async function startPlan(force){
  if(r.error){setLocked(false);$('recipe').textContent='could not start: '+r.error;$('planMode').checked=false;return;}
  planTimer=setInterval(pollPlan,1500);}
 async function pollPlan(){
- const r=await post('/api/plan/status',{});
+ let r;
+ try { r=await post('/api/plan/status',{}); }
+ catch(e){ return; }   // transient (server restart) — keep spinning
  if(r.status==='running')return;
  clearInterval(planTimer);planTimer=null;setLocked(false);
  $('planMode').checked=(r.status==='done');
