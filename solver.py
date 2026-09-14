@@ -222,6 +222,9 @@ def solve_global(targets, foods, memories, humans, avail, scarce_weight=8.0,
         prob += pulp.lpSum(x[a, i] for a in range(len(targets))) <= cap
     M = 1_000_000
     obj = []
+    # NOTE: a target is never collaterally beaten by a LOWER-tier human (the
+    # game favors higher tiers), so collateral indicators are only modelled for
+    # humans with tier >= target tier. Cuts ~60% of binaries.
     for a, t in enumerate(targets):
         totals = [pulp.lpSum(x[a, i] * vecs[i][s] for i in range(len(items)))
                   for s in range(15)]
@@ -230,6 +233,8 @@ def solve_global(targets, foods, memories, humans, avail, scarce_weight=8.0,
         for hi, h in enumerate(humans):
             if h["name"] == t["name"]:
                 continue
+            if h["tier"] < t["tier"]:
+                continue   # can never beat the target under the favoring rule
             w = collat_weight(t, h)
             if w == 0:
                 continue
@@ -251,7 +256,9 @@ def solve_global(targets, foods, memories, humans, avail, scarce_weight=8.0,
     solver_opts = pulp.PULP_CBC_CMD(msg=0, timeLimit=time_limit) if time_limit \
         else pulp.PULP_CBC_CMD(msg=0)
     prob.solve(solver_opts)
-    if prob.status != 1:
+    # status 1 = optimal; 2 (CBC timeLimit at a finite incumbent) still has a
+    # usable, fully-feasible best-known solution — accept both, report which.
+    if prob.status not in (1, 2):
         return None
     out = {}
     for a, t in enumerate(targets):
@@ -261,6 +268,7 @@ def solve_global(targets, foods, memories, humans, avail, scarce_weight=8.0,
             if c:
                 chosen[items[i][1]["name"]] = c
         out[t["name"]] = chosen
+    out["_meta"] = {"status": "optimal" if prob.status == 1 else "best-found (time limit hit)"}
     return out
 
 def fmt_totals(totals):

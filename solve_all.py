@@ -35,6 +35,8 @@ res = solver.solve_global(solver.humans_, solver.foods_, solver.memories_,
                           solver.humans_, avail, time_limit=TL, warm_start=warm)
 print("elapsed", round(time.time() - t0), "s; solved:", res is not None)
 if res:
+    meta = res.pop("_meta", {})
+    print("quality:", meta.get("status", "unknown"))
     # Star Child: no stat recipe — it consumes the Star Child memory itself
     # (quest reward, not from the item pool) plus one human seed.
     res["Star Child"] = {"_note": "insert the Star Child MEMORY (quest 'True Choices' "

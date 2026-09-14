@@ -414,7 +414,7 @@ def plan_start(force):
             pass
     log = open(PLAN_LOG, "w")
     PLAN_PROC = subprocess.Popen(
-        [sys.executable, os.path.join(here, "solve_all.py"), "900"],
+        [sys.executable, os.path.join(here, "solve_all.py"), "600"],
         cwd=here, stdout=log, stderr=subprocess.STDOUT,
         start_new_session=True)
     return {"started": True, "status": "running"}
