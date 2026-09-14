@@ -198,7 +198,10 @@ function render(el,o){
    .replace(/^(SAFE:.*)$/,'<b class="ok">$1</b>')
    .replace(/^(RISK:.*)$/,'<b class="bad">$1</b>')
    .replace(/^(!! .*)$/,'<b class="warn">$1</b>')
-   .replace(/^(NOTE:.*)$/,'<b class="warn">$1</b>')).join('\\n');}
+   .replace(/^(NOTE:.*)$/,'<b class="warn">$1</b>')
+   .replace(/^(  MEMORIES — .*)$/,'<b>$1</b>')
+   .replace(/^(  FOODS — .*)$/,'<b class="ok">$1</b>')
+   .replace(/^(mental stats .*)$/,'<b>$1</b>')).join('\\n');}
 </script></body></html>"""
 
 class H(BaseHTTPRequestHandler):
@@ -260,20 +263,35 @@ def api_solve(body):
     food_names = {f["name"]: f["avail"] for f in solver.foods_}
     lines = [f"RECIPE for {target['name']}:"]
     exhaust = []
+    mem_lines, food_lines = [], []
     for k, v in sorted(chosen.items(), key=lambda kv: (-kv[1], kv[0])):
         if k in mem_names:
-            tag = f"  ◆ memory — {v}/{mem_names[k]} of ALL that exist in the world"
+            tag = f"  {v}/{mem_names[k]} of all that exist"
             if v >= mem_names[k]:
+                tag = "  !! ENTIRE world supply"
                 exhaust.append(k)
+            mem_lines.append(f"  ◆ {v:>3} x {k}{tag}")
         else:
-            tag = f"  ↻ food — craftable, farm organics (×{food_names[k]} also lootable)"
-        lines.append(f"  {v:>3} x {k}{tag}")
+            food_lines.append(f"  ↻ {v:>3} x {k}")
+    lines.append("")
+    lines.append("  MEMORIES — must be found in the world:")
+    lines.extend(mem_lines or ["    (none)"])
+    lines.append("")
+    lines.append("  FOODS — craft at Food Processor (organics are farmable):")
+    lines.extend(food_lines or ["    (none)"])
     if exhaust:
         lines.append("")
         lines.append(f"NOTE: this consumes the ENTIRE world supply of: {', '.join(exhaust)}")
     lines.append("")
-    lines.append("stats: " + ", ".join(f"{s}={int(totals[i])}"
-                 for i, s in enumerate(solver.STATS) if totals[i] > 0))
+    mem_stats = ["adaptability", "creativity", "communication", "discipline",
+                 "empathy", "focus", "leadership", "logic", "patience", "wisdom"]
+    food_stats = ["weight", "height", "life_exp", "strength", "intellect"]
+    def statline(names):
+        parts = [f"{s}={int(totals[i])}" for i, s in enumerate(solver.STATS)
+                 if s in names and totals[i] > 0]
+        return ", ".join(parts) or "(none)"
+    lines.append("mental stats (from MEMORIES):  " + statline(mem_stats))
+    lines.append("physical stats (from FOODS):   " + statline(food_stats))
     lines.append("")
     lines.append("the pod could come out as:")
     for h in sorted(matched, key=lambda h: -h["tier"]):
@@ -304,8 +322,16 @@ def api_combo(body):
             count += 1
     if not count:
         return "select some items first"
-    lines = [f"{count} items ->", "stats: " + (", ".join(
-        f"{s}={int(totals[i])}" for i, s in enumerate(solver.STATS) if totals[i] > 0) or "(none)"), ""]
+    mem_stats = ["adaptability", "creativity", "communication", "discipline",
+                 "empathy", "focus", "leadership", "logic", "patience", "wisdom"]
+    food_stats = ["weight", "height", "life_exp", "strength", "intellect"]
+    def statline(names):
+        parts = [f"{s}={int(totals[i])}" for i, s in enumerate(solver.STATS)
+                 if s in names and totals[i] > 0]
+        return ", ".join(parts) or "(none)"
+    lines = [f"{count} items ->",
+             "mental stats (from MEMORIES):  " + statline(mem_stats),
+             "physical stats (from FOODS):   " + statline(food_stats), ""]
     matched = solver.satisfied(totals, solver.humans_)
     if matched:
         lines.append("the pod could come out as:")
