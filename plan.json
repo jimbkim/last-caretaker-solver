@@ -1,0 +1,395 @@
+[
+  {
+    "profession": "Sustenance Architect T4",
+    "items": {
+      "Ultimate Genesis": 5,
+      "PECO Athletics - 100m Dash": 8,
+      "The Art of War": 5
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Existential Expressionist T4",
+    "items": {
+      "Ultimate Genesis": 5,
+      "Guitar Slinger": 1,
+      "Porcine Vocal Interface": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Existential Chancellor T4",
+    "items": {
+      "High-Fat": 12,
+      "Physique Fuel": 1,
+      "Immune Boost": 1,
+      "Hyper-Evolution": 6,
+      "Ash Notebook": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Quantum Engineer T4",
+    "items": {
+      "Bone-Fortify": 1,
+      "Muscle Fortification": 4,
+      "Mitochondrial Surge": 4,
+      "Ash Notebook": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Frontier Explorer T4",
+    "items": {
+      "Mitochondrial Surge": 4,
+      "Ultimate Genesis": 3,
+      "Starshine": 5
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Neural Architect T4",
+    "items": {
+      "High-Fat": 25,
+      "Immune Boost": 1,
+      "Ash Notebook": 1,
+      "Oath Token": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Colonel of Humanity T4",
+    "items": {
+      "Ultimate Genesis": 6,
+      "Porcine Vocal Interface": 2,
+      "The Art of War": 12
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Logistics High Command T4",
+    "items": {
+      "Hyper-Evolution": 8,
+      "Ash Notebook": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Guardian of Humanity T4",
+    "items": {
+      "Hyper-Evolution": 2,
+      "Mitochondrial Surge": 7,
+      "Commander's Log": 10,
+      "Plans": 5,
+      "Second Reality": 5
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Quantum Physicist T4",
+    "items": {
+      "Neuro-Boost": 8,
+      "Nanite Infusion": 2,
+      "Ultimate Genesis": 1,
+      "Ash Notebook": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Biosphere Director T3",
+    "items": {
+      "Ultimate Genesis": 4,
+      "The Art of War": 3,
+      "Turbulence": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Cultural Archivist T3",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Porcine Vocal Interface": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Professor T3",
+    "items": {
+      "High-Fat": 5,
+      "Ultimate Genesis": 5,
+      "Camera": 1,
+      "Love Letters": 6,
+      "Plans": 2,
+      "Turbulence": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Energy Engineer T3",
+    "items": {
+      "Muscle Fortification": 3,
+      "Mitochondrial Surge": 3,
+      "Ash Notebook": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Mission Seeker T3",
+    "items": {
+      "Mitochondrial Surge": 3,
+      "Ultimate Genesis": 2,
+      "Keys to Imagination": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Neuro Specialist T3",
+    "items": {
+      "High-Fat": 13,
+      "Muscle Fortification": 2,
+      "Nanite Infusion": 1,
+      "Ash Notebook": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Settlement Governor T3",
+    "items": {
+      "Ultimate Genesis": 3,
+      "Porcine Vocal Interface": 1,
+      "The Art of War": 4
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Resource Director T3",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Plans": 5,
+      "Sudoku Book": 3,
+      "Touchin' the Chip": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Station Protector T3",
+    "items": {
+      "Mitochondrial Surge": 4,
+      "Ultimate Genesis": 2,
+      "Commander's Log": 5,
+      "Plans": 1,
+      "Where's Tommy": 7
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Theoretical Scientist T3",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Encyclopedia": 4,
+      "Poushki": 2,
+      "Sudoku Book": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Growth Specialist T2",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Commander's Log": 2,
+      "Lonelies": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Sculptor T2",
+    "items": {
+      "Ultimate Genesis": 2,
+      "Porcine Vocal Interface": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Teacher T2",
+    "items": {
+      "High-Fat": 2,
+      "Ultimate Genesis": 5,
+      "Fluctuations": 1,
+      "Love Letters": 1,
+      "Plans": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Systems Engineer T2",
+    "items": {
+      "Bone-Fortify": 1,
+      "Muscle Fortification": 2,
+      "Mitochondrial Surge": 1,
+      "Plans": 2,
+      "Sudoku Book": 1,
+      "Turbulence": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Star Analyzer T2",
+    "items": {
+      "Mitochondrial Surge": 4,
+      "Ultimate Genesis": 1,
+      "Lonelies": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Doctor T2",
+    "items": {
+      "High-Fat": 9,
+      "Ultimate Genesis": 1,
+      "Love Letters": 1,
+      "Porcine Vocal Interface": 1,
+      "Turbulence": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Station Quartermaster T2",
+    "items": {
+      "Ultimate Genesis": 2,
+      "Cards": 2,
+      "Commander's Log": 2
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Distributor T2",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Plans": 1,
+      "Small Tree": 1,
+      "Sudoku Book": 1,
+      "Touchin' the Chip": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Guard T2",
+    "items": {
+      "Muscle Fortification": 1,
+      "Mitochondrial Surge": 4,
+      "Chiptropolis": 1,
+      "Commander's Log": 3
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Field Research Scientist T2",
+    "items": {
+      "Ultimate Genesis": 3,
+      "Encyclopedia": 2,
+      "PECO Athletics - Triple Jump": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Nutrient Handler T1",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Commander's Log": 1,
+      "PECO Athletics - 100m Dash": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Visual Technician T1",
+    "items": {
+      "Ultimate Genesis": 2,
+      "Angerkoski": 1,
+      "Cards": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Manual Holder T1",
+    "items": {
+      "Ultimate Genesis": 4,
+      "Camera": 1,
+      "Love Letters": 1,
+      "PECO Athletics - 100m Dash": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Maintenance Engineer T1",
+    "items": {
+      "Muscle Fortification": 1,
+      "Mitochondrial Surge": 1,
+      "Ultimate Genesis": 1,
+      "Assembly Instructions": 1,
+      "Chiptropolis": 1,
+      "Small Tree": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Station Roamer T1",
+    "items": {
+      "Muscle Fortification": 1,
+      "Mitochondrial Surge": 2,
+      "Ultimate Genesis": 1,
+      "Chiptropolis": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Health Assistant T1",
+    "items": {
+      "Ultimate Genesis": 5,
+      "Keys to Imagination": 1,
+      "Love Letters": 1,
+      "Mirror": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Room Supervisor T1",
+    "items": {
+      "Muscle Fortification": 2,
+      "Ultimate Genesis": 1,
+      "Commander's Log": 1,
+      "Porcine Vocal Interface": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Basic Supplier T1",
+    "items": {
+      "High-Fat": 1,
+      "Hyper-Evolution": 4,
+      "Assembly Instructions": 2,
+      "Keys to Imagination": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Door Jammer T1",
+    "items": {
+      "Muscle Fortification": 2,
+      "Mitochondrial Surge": 1,
+      "Nanite Infusion": 1,
+      "Commander's Log": 1,
+      "Where's Tommy": 1
+    },
+    "collateral_risk": []
+  },
+  {
+    "profession": "Lab Technician T1",
+    "items": {
+      "Muscle Fortification": 1,
+      "Nanite Infusion": 4,
+      "Encyclopedia": 1,
+      "Where's Tommy": 1
+    },
+    "collateral_risk": []
+  }
+]
