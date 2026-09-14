@@ -82,7 +82,9 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
  <span><span class="tier4">T4</span> apex — rarest items</span><span class="dot">·</span>
  <span class="ok">SAFE</span> = no same-or-higher-tier match, target guaranteed<span class="dot">·</span>
  <span class="bad">RISK</span> = pod may come out as something else<span class="dot">·</span>
- <span class="warn">!!</span> = collateral to watch
+ <span class="warn">!!</span> = collateral to watch<span class="dot">·</span>
+ <span>◆ = memory — only WorldCount exist, fixed</span><span class="dot">·</span>
+ <span>↻ = food — renewable, craft from organics</span>
 </div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
@@ -168,11 +170,11 @@ async function showRecipe(full,committee,base){
  render($('recipe'),await post('/api/solve',{target:full}));}
 
 // ── tab 2: combo ────────────────────────────────────────────────────
-function chips(el,items){items.forEach(it=>{
+function chips(el,items,mark){items.forEach(it=>{
  const c=document.createElement('span');c.className='chip';
- c.innerHTML=`${it.name} <span class="ct">×${it.avail}</span>`;
+ c.innerHTML=`${mark} ${it.name} <span class="ct">×${it.avail}</span>`;
  c.dataset.name=it.name;c.onclick=()=>{c.classList.toggle('sel');count()};el.append(c);});}
-chips($('foodChips'),DATA.foods); chips($('memChips'),DATA.memories);
+chips($('foodChips'),DATA.foods,'↻'); chips($('memChips'),DATA.memories,'◆');
 function count(){$('selCount').textContent=document.querySelectorAll('.chip.sel').length}
 function clearSel(){document.querySelectorAll('.chip.sel').forEach(c=>c.classList.remove('sel'));count()}
 async function doCombo(){
@@ -195,7 +197,8 @@ function render(el,o){
    colorProf(esc(l))
    .replace(/^(SAFE:.*)$/,'<b class="ok">$1</b>')
    .replace(/^(RISK:.*)$/,'<b class="bad">$1</b>')
-   .replace(/^(!! .*)$/,'<b class="warn">$1</b>')).join('\\n');}
+   .replace(/^(!! .*)$/,'<b class="warn">$1</b>')
+   .replace(/^(NOTE:.*)$/,'<b class="warn">$1</b>')).join('\\n');}
 </script></body></html>"""
 
 class H(BaseHTTPRequestHandler):
@@ -253,9 +256,21 @@ def api_solve(body):
     if not res:
         return f"INFEASIBLE: not enough items in the world for {target['name']} at current scarcity"
     chosen, totals, matched = res
+    mem_names = {m["name"]: m["avail"] for m in solver.memories_}
+    food_names = {f["name"]: f["avail"] for f in solver.foods_}
     lines = [f"RECIPE for {target['name']}:"]
+    exhaust = []
     for k, v in sorted(chosen.items(), key=lambda kv: (-kv[1], kv[0])):
-        lines.append(f"  {v:>3} x {k}")
+        if k in mem_names:
+            tag = f"  ◆ memory — {v}/{mem_names[k]} of ALL that exist in the world"
+            if v >= mem_names[k]:
+                exhaust.append(k)
+        else:
+            tag = f"  ↻ food — craftable, farm organics (×{food_names[k]} also lootable)"
+        lines.append(f"  {v:>3} x {k}{tag}")
+    if exhaust:
+        lines.append("")
+        lines.append(f"NOTE: this consumes the ENTIRE world supply of: {', '.join(exhaust)}")
     lines.append("")
     lines.append("stats: " + ", ".join(f"{s}={int(totals[i])}"
                  for i, s in enumerate(solver.STATS) if totals[i] > 0))
