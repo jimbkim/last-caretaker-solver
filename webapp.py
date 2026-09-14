@@ -426,10 +426,11 @@ def _orphan_solver_pid():
             if not pid.isdigit():
                 continue
             try:
-                cl = open(f"/proc/{pid}/cmdline", "rb").read().decode(errors="replace")
+                cl = open(f"/proc/{pid}/cmdline", "rb").read().decode(errors="replace").split("\0")
             except OSError:
                 continue
-            if "solve_all.py" in cl:
+            if len(cl) >= 2 and cl[1].endswith("solve_all.py") \
+                    and os.path.basename(cl[0]).startswith("python"):
                 return int(pid)
     except OSError:
         pass
