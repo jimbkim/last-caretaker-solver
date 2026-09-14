@@ -323,6 +323,11 @@ sub.add_parser("scarcity")
 pl = sub.add_parser("plan"); pl.add_argument("--cap", type=int, default=0,
     help="multiply world availability (e.g. re-run saves) to test plan depth")
 foods_, memories_, humans_ = load()
-args = p.parse_args()
-{"targets": cmd_targets, "solve": cmd_solve, "combo": cmd_combo,
- "scarcity": cmd_scarcity, "plan": cmd_plan}[args.cmd](args)
+
+def main():
+    args = p.parse_args()
+    {"targets": cmd_targets, "solve": cmd_solve, "combo": cmd_combo,
+     "scarcity": cmd_scarcity, "plan": cmd_plan}[args.cmd](args)
+
+if __name__ == "__main__":
+    main()
