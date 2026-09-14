@@ -198,6 +198,71 @@ def solve_combo(target, foods, memories, humans, avail=None,
             chosen[items[i][1]["name"]] = c
     return dict(chosen), totals_f, satisfied(totals_f, humans)
 
+
+
+def solve_global(targets, foods, memories, humans, avail, scarce_weight=8.0,
+                 time_limit=None, warm_start=None):
+    """ONE ILP for the whole human set: item counts per human, jointly capped
+    by world availability. Objective = weighted collateral (per human)
+    + item count + scarce_weight * (count/availability) per item, so a shared
+    scarce memory goes to the human that has no substitute instead of to
+    whoever solved first. Returns {human_name: {item: count}} or None."""
+    items = ([("food", f) for f in foods] + [("mem", m) for m in memories])
+    vecs = [stat_vec(it, kind) for kind, it in items]
+    prob = pulp.LpProblem("grow_all", pulp.LpMinimize)
+    x = {}
+    for a, t in enumerate(targets):
+        for i in range(len(items)):
+            x[a, i] = pulp.LpVariable(f"x{a}_{i}", lowBound=0, cat="Integer")
+            if warm_start and items[i][1]["name"] in warm_start.get(t["name"], {}):
+                x[a, i].setInitialValue(warm_start[t["name"]][items[i][1]["name"]])
+    # world scarcity: summed across ALL humans
+    for i, (kind, it) in enumerate(items):
+        cap = avail.get(it["name"], it["avail"])
+        prob += pulp.lpSum(x[a, i] for a in range(len(targets))) <= cap
+    M = 1_000_000
+    obj = []
+    for a, t in enumerate(targets):
+        totals = [pulp.lpSum(x[a, i] * vecs[i][s] for i in range(len(items)))
+                  for s in range(15)]
+        for s, val in t["req"].items():
+            prob += totals[SI[s]] >= val
+        for hi, h in enumerate(humans):
+            if h["name"] == t["name"]:
+                continue
+            w = collat_weight(t, h)
+            if w == 0:
+                continue
+            d = [pulp.LpVariable(f"d{a}_{hi}_{SI[s]}", cat="Binary")
+                 for s in h["req"]]
+            z = pulp.LpVariable(f"z{a}_{hi}", cat="Binary")
+            for dd, (s, val) in zip(d, h["req"].items()):
+                prob += totals[SI[s]] >= val - M * dd
+                prob += totals[SI[s]] <= val - 1 + M * (1 - dd)
+                prob += z >= dd
+            prob += z <= pulp.lpSum(d)
+            obj.append(w * (1 - z))
+        obj.append(pulp.lpSum(x[a, i] for i in range(len(items))))
+        # scarcity pressure: expensive per unit when few exist
+        for i, (kind, it) in enumerate(items):
+            cap = max(1, avail.get(it["name"], it["avail"]))
+            obj.append(scarce_weight / cap * x[a, i])
+    prob += pulp.lpSum(obj)
+    solver_opts = pulp.PULP_CBC_CMD(msg=0, timeLimit=time_limit) if time_limit \
+        else pulp.PULP_CBC_CMD(msg=0)
+    prob.solve(solver_opts)
+    if prob.status != 1:
+        return None
+    out = {}
+    for a, t in enumerate(targets):
+        chosen = {}
+        for i in range(len(items)):
+            c = int(round(x[a, i].value() or 0))
+            if c:
+                chosen[items[i][1]["name"]] = c
+        out[t["name"]] = chosen
+    return out
+
 def fmt_totals(totals):
     return {STATS[s]: int(totals[s]) for s in range(15) if totals[s] > 0}
 

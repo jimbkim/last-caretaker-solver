@@ -59,6 +59,15 @@ def _load_locations():
 
 MEMORY_LOCATIONS = _load_locations()
 
+def _load_global_plan():
+    """The one-shot whole-set allocation (solver.solve_global), if it exists."""
+    import os, json
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "global_plan.json")
+    try:
+        return json.load(open(p))
+    except Exception:
+        return None
+
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>Last Caretaker — Human Lab</title>
 <style>
@@ -211,12 +220,10 @@ function showHumans(ci,cname,el){
  DATA.committees[ci][2].forEach(base=>{
   const p=profByBase[base]; if(!p) return;
   const h=document.createElement('div');h.className='human';
-  const reqs=Object.entries(p.req).map(([k,v])=>`${k}≥${v}`).join('  ');
   h.innerHTML=`<span class="tier${p.tier}">T${p.tier} ${base}</span>`;
   h.onclick=()=>{document.querySelectorAll('.human').forEach(x=>x.classList.toggle('on',x===h));
     showRecipe(p.name,cname,base);};
-  const sub=document.createElement('div');sub.className='req';sub.textContent=reqs;
-  h.append(sub); hl.append(h);});
+  hl.append(h);});
 }
 async function showRecipe(full,committee,base){
  curHuman=base;
@@ -309,28 +316,66 @@ class H(BaseHTTPRequestHandler):
 def by_name(items, name):
     return next((i for i in items if i["name"].lower() == name.lower()), None)
 
+def _totals_of(chosen):
+    totals = [0.0] * 15
+    for name, c in chosen.items():
+        it = by_name(solver.foods_, name)
+        kind, v = ("food", it) if it else ("mem", by_name(solver.memories_, name))
+        if v:
+            vec = solver.stat_vec(v, kind)
+            for s in range(15):
+                totals[s] += c * vec[s]
+    return totals
+
+def _global_usage():
+    """item -> count across the whole global plan (None if no plan file)."""
+    gp = _load_global_plan()
+    if not gp:
+        return None
+    used = {}
+    for items in gp.values():
+        for k, v in items.items():
+            if isinstance(v, int):
+                used[k] = used.get(k, 0) + v
+    return used
+
 def api_solve(body):
     target = by_name(solver.humans_, body.get("target", ""))
     if not target:
         return "pick a profession first"
-    avail = None if body.get("unlimited", True) else {
-        i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
-    res = solver.solve_combo(target, solver.foods_, solver.memories_,
-                             solver.humans_, avail=avail)
-    if not res:
-        return f"INFEASIBLE: not enough items in the world for {target['name']} at current scarcity"
-    chosen, totals, matched = res
+    chosen = None
+    source = None
+    gp = _load_global_plan()
+    if gp and not body.get("solo") and target["name"] in gp:
+        chosen = gp[target["name"]]
+        source = "from the GLOBAL plan — whole-set allocation against real world counts"
+    if chosen is None:
+        avail = None if (body.get("unlimited", True) and not gp) else {
+            i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
+        res = solver.solve_combo(target, solver.foods_, solver.memories_,
+                                 solver.humans_, avail=avail)
+        if not res:
+            return f"INFEASIBLE: not enough items in the world for {target['name']} at current scarcity"
+        chosen, totals, matched = res
+        source = "solo solve (ignores what other humans will take)" if body.get("unlimited", True) \
+            else "solo solve (world-capped, but ignores sibling humans)"
+    else:
+        totals = _totals_of(chosen)
+        matched = solver.satisfied(totals, solver.humans_)
+    gused = _global_usage()
     mem_names = {m["name"]: m["avail"] for m in solver.memories_}
-    food_names = {f["name"]: f["avail"] for f in solver.foods_}
-    lines = [f"RECIPE for {target['name']}:"]
+    lines = [f"RECIPE for {target['name']}", f"  {source}"]
     exhaust = []
     mem_lines, food_lines = [], []
     for k, v in sorted(chosen.items(), key=lambda kv: (-kv[1], kv[0])):
         if k in mem_names:
-            tag = f"  {v}/{mem_names[k]} of all that exist"
-            if v >= mem_names[k]:
-                tag = "  !! ENTIRE world supply"
+            tot = gused.get(k) if gused else v
+            if gused and tot >= mem_names[k]:
+                tag = f"  !! LAST ONES — all {mem_names[k]} in the world go to the plan, this human takes {v}"
                 exhaust.append(k)
+            else:
+                tag = f"  {v} used by this human; plan total {tot}/{mem_names[k]} of all that exist" if gused \
+                    else f"  {v}/{mem_names[k]} of all that exist"
             mem_lines.append(f"  ◆ {v:>3} x {k}{tag}")
             where = MEMORY_LOCATIONS.get(k)
             note = MEMORY_NOTES.get(k)
