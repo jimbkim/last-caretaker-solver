@@ -44,7 +44,7 @@ SPECIAL = [
 # Curated hunt notes for memories the wiki location-scrape can't answer.
 MEMORY_NOTES = {
     "Ash Notebook": "ALL 10 are in the maze at The Transposium — one trip, no luck needed.",
-    "Oath Token": "Not on the wiki yet. Community reports: unmarked mystery — scan the statue(s) to trigger it; NOT the 'Before the Archives' quest. Reportedly REUSABLE (survives growth).",
+    "Oath Token": "Update 5 hidden location 'Fourth Chamber': collect MAPS at 3 statue sites, triangulate 2 maps to mark the chamber, bring building materials (door/statues need repairs), 3rd map+statue opens it, token is in the vault inside. No quest marker. REUSABLE — confirmed: grew Chancellor + Colonel with one; quick pod-swap recovers it.",
     "Star Child": "Quest 'True Choices' -> Courier Sieve Node Facility (169,-2), east map.",
     "Porcine Vocal Interface": "Helios Reserve Lyra.",
 }
