@@ -126,6 +126,7 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .cancelbtn{background:#21262d;border:1px solid #f85149;color:#ff7b72;padding:.5rem 1.1rem;border-radius:6px;cursor:pointer;font:inherit}
 body.locked{pointer-events:none;user-select:none}
 body.locked #busy{pointer-events:auto}
+.rsv{color:#f2cc60;cursor:help;margin-left:.2rem}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab</span></h1>
 <div class="legend">
@@ -138,7 +139,8 @@ body.locked #busy{pointer-events:auto}
  <span class="warn">!!</span> = collateral to watch<span class="dot">·</span>
  <span>◆ = memory — only WorldCount exist, fixed</span><span class="dot">·</span>
  <span>↻ = food — renewable, craft from organics</span><span class="dot">·</span>
- <span class="loc">⌖ = where to find it</span>
+ <span class="loc">⌖ = where to find it</span><span class="dot">·</span>
+ <span class="rsv">★</span> = on the reserve list (hover for details)
 </div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
@@ -199,9 +201,16 @@ body.locked #busy{pointer-events:auto}
 </section>
 
 <section id="s-reserve">
- <div class="row"><button class="go" onclick="doReserve()">Refresh from current plan</button>
- <span class="small">which humans claim the zero-slack memories — loot them straight into the reserve box</span></div>
- <pre id="result5" style="min-height:10rem">loading…</pre>
+ <div class="cols2">
+  <div>
+   <div class="lbl">RESERVED MEMORIES</div>
+   <div class="panel" id="rsvList"><span class="small">loading…</span></div>
+  </div>
+  <div>
+   <div class="lbl">DETAILS</div>
+   <pre id="result5" style="min-height:10rem">click an item…</pre>
+  </div>
+ </div>
 </section>
 
 <script>
@@ -315,9 +324,22 @@ async function doCombo(){
  render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
 
 // ── tab 3: plan ─────────────────────────────────────────────────────
-async function doReserve(){
- $('result5').textContent='building…';
- render($('result5'),await post('/api/reserve',{}));}
+async function doReserve(){}   // details pane driven by DATA.reserve, built at load
+function buildReserve(){
+ const el=$('rsvList'); el.innerHTML='';
+ if(!DATA.reserve.length){el.innerHTML='<span class="small">no plan yet — run Full plan mode to generate the allocation.</span>';return;}
+ DATA.reserve.forEach(r=>{
+  const d=document.createElement('div');d.className='human';
+  d.innerHTML=`<span class="${r.slack<=0?'bad':'warn'}">${esc(r.name)}</span>`;
+  d.onclick=()=>{
+   document.querySelectorAll('#rsvList .human').forEach(x=>x.classList.toggle('on',x===d));
+   let t=`${r.name}\\n${r.verdict}\\nworld supply: ${r.world} · plan claims: ${r.plan}\\n`;
+   if(r.where) t+=`\\nWhere: ${r.where}\\n`;
+   t+='\\nRESERVED FOR:\\n';
+   r.claimers.forEach(([h,c])=>{t+=`   ${String(c).padStart(3)}×  ${h.replace(/ T\\d+$/,'')}\\n`;});
+   $('result5').textContent=t;};
+  el.append(d);});}
+buildReserve();
 async function doHunt(){
  $('result4').textContent='loading…';
  render($('result4'),await post('/api/hunt',{n:+$('huntn').value||25}));}
@@ -326,10 +348,12 @@ async function post(url,body){
  const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
  return await r.json();}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function tipstars(s){ // «tip»★ -> hoverable star (run BEFORE other line rules)
+ return s.replace(/«([^»]*)»★/g,(m,tip)=>`<span class="rsv" title="${esc(tip)}">★</span>`);}
 function colorProf(s){return s.replace(/T(\\d)/g,'<span class="tier$1">T$1</span>')}
 function render(el,o){
  el.innerHTML = o.html.split('\\n').map(l=>
-   colorProf(esc(l))
+   tipstars(colorProf(esc(l)))
    .replace(/^(SAFE:.*)$/,'<b class="ok">$1</b>')
    .replace(/^(RISK:.*)$/,'<b class="bad">$1</b>')
    .replace(/^(!! .*)$/,'<b class="warn">$1</b>')
@@ -360,6 +384,7 @@ class H(BaseHTTPRequestHandler):
                                  "req": {k: int(v) for k, v in h["req"].items()}}
                                 for h in solver.humans_],
                 "hasPlan": os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "global_plan.json")),
+                "reserve": reserve_data(),
                 "foods": [{"name": f["name"], "avail": f["avail"]} for f in solver.foods_],
                 "memories": [{"name": m["name"], "avail": m["avail"]} for m in solver.memories_],
             }
@@ -502,6 +527,18 @@ def _global_usage():
                 used[k] = used.get(k, 0) + v
     return used
 
+def rsv_star(item):
+    """★ marker + hover tooltip for reserve-list items, encoded for render()."""
+    rsv = {r["name"]: r for r in reserve_data()}
+    r = rsv.get(item)
+    if not r:
+        return ""
+    tip = f"{r['verdict']} · plan uses {r['plan']}/{r['world']} in world"
+    if r["where"]:
+        tip += " · " + r["where"]
+    tip = tip.replace('"', "'").replace("«", "(").replace("»", ")")
+    return f" «{tip}»★"
+
 def api_solve(body):
     target = by_name(solver.humans_, body.get("target", ""))
     if not target:
@@ -541,7 +578,7 @@ def api_solve(body):
             else:
                 tag = f"  {v} used by this human; plan total {tot}/{mem_names[k]} of all that exist" if gused \
                     else f"  {v}/{mem_names[k]} of all that exist"
-            mem_lines.append(f"  ◆ {v:>3} x {k}{tag}")
+            mem_lines.append(f"  ◆ {v:>3} x {k}{tag}" + rsv_star(k))
             where = MEMORY_LOCATIONS.get(k)
             note = MEMORY_NOTES.get(k)
             if note:
@@ -636,19 +673,53 @@ def api_combo(body):
         lines.append(f"\n(unknown items ignored: {', '.join(unknown)})")
     return "\n".join(lines)
 
+def reserve_data():
+    """Structured reserve list from the current plan. Returns list of dicts."""
+    plan = _load_global_plan()
+    if not plan:
+        try:
+            pj = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "plan.json")))
+            plan = {x["profession"]: x["items"] for x in pj if x["items"]}
+        except Exception:
+            return []
+    mem_avail = {m["name"]: m["avail"] for m in solver.memories_}
+    used_by = {}
+    for human, items in plan.items():
+        for k, v in items.items():
+            if k in mem_avail and isinstance(v, int):
+                used_by.setdefault(k, []).append([human, v])
+    out = []
+    for m, claimers in used_by.items():
+        total = sum(c for _, c in claimers)
+        slack = mem_avail[m] - total
+        if total < 0.6 * mem_avail[m]:
+            continue   # not reserve-worthy; general stash is fine
+        if slack <= 0:
+            verdict = "ZERO SPARE — reserve every single one"
+        elif slack <= 2:
+            verdict = f"only {slack} spare in the world — treat as reserved"
+        else:
+            verdict = f"{slack} spare — reserve these {total}, extras general"
+        where = MEMORY_NOTES.get(m) or MEMORY_LOCATIONS.get(m)
+        if isinstance(where, list):
+            where = ", ".join(where[:6]) + ("…" if len(where) > 6 else "")
+        out.append({"name": m, "world": mem_avail[m], "plan": total,
+                    "slack": slack, "verdict": verdict, "where": where or "",
+                    "claimers": sorted(claimers, key=lambda x: -x[1])})
+    out.sort(key=lambda r: r["slack"])
+    return out
+
 def api_reserve(body):
-    import subprocess as sp
-    here = os.path.dirname(os.path.abspath(__file__))
-    plan_src = "global_plan.json" if os.path.exists(os.path.join(here, "global_plan.json")) else "plan.json (greedy — global solve may re-assign)"
-    try:
-        sp.run([sys.executable, os.path.join(here, "make_reserve.py")],
-               cwd=here, capture_output=True, timeout=30, check=True)
-        txt = open(os.path.join(here, "RESERVE.md")).read()
-    except Exception as e:
-        return "could not build reserve list: " + str(e)
-    # light markdown -> plain pre text
-    txt = re.sub(r"^#+ ", "", txt, flags=re.M).replace("**", "").replace("*Where:*", "Where:").replace("`","")
-    return f"(source: {plan_src})\n\n" + txt
+    rows = reserve_data()
+    if not rows:
+        return "no plan available yet"
+    lines = ["RESERVE LIST (click a name in the UI for details)"]
+    for r in rows:
+        lines.append(f"  {r['name']} — {r['verdict']}")
+    return "\n".join(lines)
+
+def api_reserve_map(body):
+    return {"json": reserve_data()}
 
 def api_hunt(body):
     n = max(5, int(body.get("n", 25)))

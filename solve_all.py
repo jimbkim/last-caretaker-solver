@@ -45,7 +45,8 @@ if res:
     used = {}
     for h, items in res.items():
         for k, v in items.items():
-            used[k] = used.get(k, 0) + v
+            if isinstance(v, int):
+                used[k] = used.get(k, 0) + v
     tight = [f"{i['name']} {used.get(i['name'],0)}/{i['avail']}"
              for i in solver.memories_ if used.get(i["name"], 0) >= i["avail"] and used.get(i["name"], 0)]
     print("memories FULLY consumed:", tight or "none")
