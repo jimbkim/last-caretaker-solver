@@ -1,5 +1,7 @@
 # The Last Caretaker — Human Recipe Solver
 
+> *Independent fan-made tool. Not affiliated with, endorsed by, or sponsored by the creators or publishers of The Last Caretaker.*
+
 A local web tool for [The Last Caretaker](https://store.steampowered.com/app/1783560/) that answers one question:
 
 > **What exact memories and foods do I need to grow each committee human — and which of those items are so rare that I must not waste a single one?**
