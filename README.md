@@ -64,3 +64,7 @@ For each human, it picks a multiset of foods and memories minimizing a weighted 
 ## Credits
 
 Game data from the [Last Caretaker wiki](https://thelastcaretaker.wiki.gg/) and [Root-DE/LastCaretaker](https://github.com/Root-DE/LastCaretaker). Location and Oath Token details from community wiki/Reddit/Steam findings — the game is in active development, so treat in-game behavior as ground truth over this tool.
+
+---
+
+*Built with AI assistance (Hermes/Qwen). Game data scraped from the community wiki — accuracy follows the community, not an authority.*
