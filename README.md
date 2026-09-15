@@ -33,6 +33,17 @@ The reserve tab: zero-slack items in red, click any for the human-by-human alloc
 
 ## Quick start
 
+**Docker (easiest):**
+
+```bash
+docker run -p 8765:8765 -v tlc-state:/app/state ghcr.io/jimbkim/last-caretaker-solver
+# or build from source:
+git clone https://github.com/jimbkim/last-caretaker-solver && cd last-caretaker-solver
+docker build -t tlc . && docker run -p 8765:8765 -v tlc-state:/app/state tlc
+```
+
+**No Docker:**
+
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install pulp          # the ILP solver (CBC ships with it)

@@ -11,6 +11,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import solver
 
 PORT = 8765
+STATE_DIR = os.environ.get("SOLVER_STATE") or os.path.dirname(os.path.abspath(__file__))
+def _state(name):
+    p = os.path.join(STATE_DIR, name)
+    os.makedirs(STATE_DIR, exist_ok=True)
+    return p
 
 # From wiki /Committees — the four members of each of the 10 committees,
 # with each committee's unlock tier.
@@ -62,7 +67,7 @@ MEMORY_LOCATIONS = _load_locations()
 def _load_global_plan():
     """The one-shot whole-set allocation (solver.solve_global), if it exists."""
     import os, json
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "global_plan.json")
+    p = _state("global_plan.json")
     try:
         return json.load(open(p))
     except Exception:
@@ -383,7 +388,7 @@ class H(BaseHTTPRequestHandler):
                 "professions": [{"name": h["name"], "tier": h["tier"],
                                  "req": {k: int(v) for k, v in h["req"].items()}}
                                 for h in solver.humans_],
-                "hasPlan": os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "global_plan.json")),
+                "hasPlan": os.path.exists(_state("global_plan.json")),
                 "reserve": reserve_data(),
                 "foods": [{"name": f["name"], "avail": f["avail"]} for f in solver.foods_],
                 "memories": [{"name": m["name"], "avail": m["avail"]} for m in solver.memories_],
@@ -425,7 +430,7 @@ PLAN_LOG = "/tmp/tlc-plan.log"
 def plan_start(force):
     global PLAN_PROC
     here = os.path.dirname(os.path.abspath(__file__))
-    plan_file = os.path.join(here, "global_plan.json")
+    plan_file = _state("global_plan.json")
     if PLAN_PROC and PLAN_PROC.poll() is None:
         return {"started": False, "status": "running"}
     if _orphan_solver_pid():
@@ -463,7 +468,7 @@ def _orphan_solver_pid():
 
 def plan_status():
     here = os.path.dirname(os.path.abspath(__file__))
-    plan_file = os.path.join(here, "global_plan.json")
+    plan_file = _state("global_plan.json")
     if PLAN_PROC and PLAN_PROC.poll() is None:
         return {"status": "running"}
     if _orphan_solver_pid():
@@ -678,7 +683,7 @@ def reserve_data():
     plan = _load_global_plan()
     if not plan:
         try:
-            pj = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "plan.json")))
+            pj = json.load(open(_state("plan.json")))
             plan = {x["profession"]: x["items"] for x in pj if x["items"]}
         except Exception:
             return []

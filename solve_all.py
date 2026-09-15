@@ -4,12 +4,16 @@ against real world scarcity. Output: global_plan.json read by webapp.py.
 
 Usage: .venv/bin/python solve_all.py [time_limit_s]
 """
-import json, os, signal, sys, time
+import json
+import os
+STATE_DIR = os.environ.get("SOLVER_STATE") or os.path.dirname(os.path.abspath(__file__))
+def _state(n):
+    return os.path.join(STATE_DIR, n), os, signal, sys, time
 import solver
 
 def _die(*_):
     # cancelled by the web UI: never leave a half-written plan behind
-    tmp = "global_plan.json.part"
+    tmp = _state("global_plan.json.part")
     if os.path.exists(tmp):
         os.remove(tmp)
     sys.exit(130)
@@ -21,11 +25,11 @@ avail = {i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
 
 warm = None
 try:
-    prev = json.load(open("global_plan.json"))
+    prev = json.load(open(_state("global_plan.json")))
     warm = prev
 except Exception:
     try:
-        warm = {p["profession"]: p["items"] for p in json.load(open("plan.json"))
+        warm = {p["profession"]: p["items"] for p in json.load(open(_state("plan.json")))
                 if p["items"]}
     except Exception:
         warm = None
@@ -50,5 +54,5 @@ if res:
     tight = [f"{i['name']} {used.get(i['name'],0)}/{i['avail']}"
              for i in solver.memories_ if used.get(i["name"], 0) >= i["avail"] and used.get(i["name"], 0)]
     print("memories FULLY consumed:", tight or "none")
-    json.dump(res, open("global_plan.json", "w"), indent=1)
+    json.dump(res, open(_state("global_plan.json"), "w"), indent=1)
     print("wrote global_plan.json")
