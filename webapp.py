@@ -578,7 +578,7 @@ def api_solve(body):
             else:
                 tag = f"  {v} used by this human; plan total {tot}/{mem_names[k]} of all that exist" if gused \
                     else f"  {v}/{mem_names[k]} of all that exist"
-            mem_lines.append(f"  ◆ {v:>3} x {k}{tag}" + rsv_star(k))
+            mem_lines.append(f"  ◆ {v:>3} x {k}" + rsv_star(k) + tag)
             where = MEMORY_LOCATIONS.get(k)
             note = MEMORY_NOTES.get(k)
             if note:
