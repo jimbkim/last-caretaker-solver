@@ -79,6 +79,7 @@ For each human, it picks a multiset of foods and memories minimizing a weighted 
 
 Versioned tags (`v1.0.0`, …); the web UI header shows the running version.
 
+- **v1.0.1** — "What would THIS grow?" chips now carry −/+ counts, so a full recipe (e.g. Ultimate Genesis ×3) replays exactly instead of matching nothing. Confirmed in-game: the growth-prediction list ranks by stat fit, but the pod still grows the highest-tier satisfied profession (tier-favoring rule holds).
 - **v1.0.0** — recipes for all 40 committee humans, global ILP allocation, reserve list, collateral SAFE/RISK, Transposium toggle (off by default), spare-margin mode (≤20% w/o Transposium / 50% with), Docker image.
 
 ## Credits

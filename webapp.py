@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import solver
 
 PORT = 8765
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 STATE_DIR = os.environ.get("SOLVER_STATE") or os.path.dirname(os.path.abspath(__file__))
 def _state(name):
     p = os.path.join(STATE_DIR, name)
@@ -352,13 +352,20 @@ async function cancelPlan(){
 // ── tab 2: combo ────────────────────────────────────────────────────
 function chips(el,items,mark){items.forEach(it=>{
  const c=document.createElement('span');c.className='chip';
- c.innerHTML=`${mark} ${it.name} <span class="ct">×${it.avail}</span>`;
- c.dataset.name=it.name;c.onclick=()=>{c.classList.toggle('sel');count()};el.append(c);});}
+ c.innerHTML=`${mark} ${it.name} <span class="ct">×${it.avail}</span>`
+  +` <span class="cq" style="display:none"><button class="qn">−</button><b class="qv">1</b><button class="qp">+</button></span>`;
+ c.dataset.name=it.name;
+ c.querySelector('.qp').onclick=e=>{e.stopPropagation();setQ(c,q(c)+1);};
+ c.querySelector('.qn').onclick=e=>{e.stopPropagation();setQ(c,Math.max(1,q(c)-1));};
+ c.onclick=()=>{c.classList.toggle('sel');
+   c.querySelector('.cq').style.display=c.classList.contains('sel')?'inline':'none';count()};el.append(c);});}
 chips($('foodChips'),DATA.foods,'↻'); chips($('memChips'),DATA.memories,'◆');
-function count(){$('selCount').textContent=document.querySelectorAll('.chip.sel').length}
-function clearSel(){document.querySelectorAll('.chip.sel').forEach(c=>c.classList.remove('sel'));count()}
+function q(c){return +c.querySelector('.qv').textContent||1}
+function setQ(c,v){c.querySelector('.qv').textContent=v;count()}
+function count(){$('selCount').textContent=[...document.querySelectorAll('.chip.sel')].reduce((a,c)=>a+q(c),0)+' items'}
+function clearSel(){document.querySelectorAll('.chip.sel').forEach(c=>{c.classList.remove('sel');c.querySelector('.cq').style.display='none';setQ(c,1)});count()}
 async function doCombo(){
- const pick=k=>[...document.querySelectorAll('#'+k+' .chip.sel')].map(c=>c.dataset.name);
+ const pick=k=>[...document.querySelectorAll('#'+k+' .chip.sel')].map(c=>({name:c.dataset.name,count:q(c)}));
  $('result2').textContent='computing…';
  render($('result2'),await post('/api/combo',{foods:pick('foodChips'),memories:pick('memChips')}));}
 
@@ -708,14 +715,18 @@ def api_combo(body):
     unknown, count = [], 0
     for kind, key, items in (("food", "foods", solver.foods_),
                              ("mem", "memories", solver.memories_)):
-        for name in body.get(key, []):
+        for entry in body.get(key, []):
+            if isinstance(entry, dict):
+                name, n = entry.get("name", ""), max(1, int(entry.get("count", 1) or 1))
+            else:
+                name, n = entry, 1
             it = by_name(items, name)
             if not it:
                 unknown.append(name); continue
             v = solver.stat_vec(it, kind)
             for s in range(15):
-                totals[s] += v[s]
-            count += 1
+                totals[s] += n * v[s]
+            count += n
     if not count:
         return "select some items first"
     mem_stats = ["adaptability", "creativity", "communication", "discipline",
