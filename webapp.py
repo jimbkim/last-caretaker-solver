@@ -740,12 +740,18 @@ def _totals_of(chosen):
     return totals
 
 def _global_usage():
-    """item -> count across the whole global plan (None if no plan file)."""
+    """item -> count across the whole global plan (None if no plan file).
+    Rows of already-grown humans are EXCLUDED — their copies live in the
+    frozen ledger (_consumed), not in the plan's future claims; counting
+    both would double-charge the world supply."""
     gp = _load_global_plan()
     if not gp:
         return None
+    grown = _grown()
     used = {}
-    for items in gp.values():
+    for human, items in gp.items():
+        if human in grown or not isinstance(items, dict):
+            continue
         for k, v in items.items():
             if isinstance(v, int):
                 used[k] = used.get(k, 0) + v
@@ -1027,9 +1033,6 @@ def api_reserve(body):
     for r in rows:
         lines.append(f"  {r['name']} — {r['verdict']}")
     return "\n".join(lines)
-
-def api_reserve_map(body):
-    return {"json": reserve_data()}
 
 def api_hunt(body):
     n = max(5, int(body.get("n", 25)))
