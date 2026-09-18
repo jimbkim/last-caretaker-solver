@@ -1,39 +1,45 @@
 {
  "Maintenance Engineer T1": {
-  "Muscle Fortification": 2,
-  "Mitochondrial Surge": 2,
-  "Assembly Instructions": 1,
-  "Camera": 1,
-  "Meditation": 1,
+  "Muscle Fortification": 1,
+  "Mitochondrial Surge": 1,
+  "Ultimate Genesis": 1,
+  "Blueprints": 1,
+  "Chiptropolis": 1,
   "Small Tree": 1
  },
  "Systems Engineer T2": {
-  "Bone-Fortify": 2,
-  "Immune Boost": 1,
-  "Mitochondrial Surge": 1,
-  "Ultimate Genesis": 1,
-  "Assembly Instructions": 2,
-  "Commander's Log": 1,
+  "High-Fat": 1,
+  "Muscle Fortification": 1,
+  "Mitochondrial Surge": 2,
+  "Programming Manual": 1,
+  "Small Tree": 2,
   "Turbulence": 1
  },
  "Energy Engineer T3": {
-  "High-Fat": 1,
-  "Mitochondrial Surge": 5,
-  "Ash Notebook": 1
+  "Muscle Fortification": 1,
+  "Mitochondrial Surge": 4,
+  "Angerkoski": 1,
+  "Keys to Imagination": 1,
+  "Programming Manual": 3,
+  "Small Tree": 6
  },
  "Quantum Engineer T4": {
   "Mitochondrial Surge": 7,
-  "Ash Notebook": 1
+  "Assembly Instructions": 10,
+  "Commander's Log": 2,
+  "Plans": 3,
+  "Poushki": 4,
+  "Small Tree": 1
  },
  "Visual Technician T1": {
   "Ultimate Genesis": 2,
-  "Cards": 1,
-  "Chiptropolis": 1,
-  "Meditation": 11
+  "Angerkoski": 1,
+  "Cards": 1
  },
  "Sculptor T2": {
   "Ultimate Genesis": 2,
-  "Porcine Vocal Interface": 1
+  "Cards": 3,
+  "Chiptropolis": 1
  },
  "Cultural Archivist T3": {
   "Ultimate Genesis": 4,
@@ -41,86 +47,94 @@
  },
  "Existential Expressionist T4": {
   "Ultimate Genesis": 5,
-  "Porcine Vocal Interface": 2,
-  "Turbulence": 1
+  "Fluctuations": 1,
+  "Porcine Vocal Interface": 2
  },
  "Manual Holder T1": {
-  "High-Fat": 5,
-  "Ultimate Genesis": 4,
-  "Angerkoski": 1,
-  "Biology Notes": 1,
-  "Camera": 1
+  "High-Fat": 1,
+  "Muscle Fortification": 2,
+  "Ultimate Genesis": 2,
+  "Camera": 1,
+  "Maps": 1,
+  "Poushki": 1
  },
  "Teacher T2": {
   "High-Fat": 2,
-  "Nutri-Core": 5,
-  "Physique Fuel": 14,
   "Immune Boost": 1,
-  "Hyper-Evolution": 2,
-  "Mitochondrial Surge": 1,
-  "Maps": 1,
-  "Porcine Vocal Interface": 1,
-  "Poushki": 1
+  "Muscle Fortification": 1,
+  "Ultimate Genesis": 3,
+  "Biology Notes": 1,
+  "Camera": 1,
+  "Cards": 2,
+  "Touchin' the Chip": 1
  },
  "Professor T3": {
-  "Ultimate Genesis": 9,
-  "Cards": 1,
-  "Maps": 6,
-  "Plans": 2,
-  "Poushki": 1,
-  "Small Tree": 2
+  "High-Fat": 5,
+  "Ultimate Genesis": 5,
+  "Biology Notes": 6,
+  "Cards": 4,
+  "Turbulence": 2
  },
  "Existential Chancellor T4": {
   "High-Fat": 10,
   "Ultimate Genesis": 4,
-  "Ash Notebook": 1,
-  "Maps": 2
+  "Biology Notes": 7,
+  "Keys to Imagination": 4,
+  "Maps": 5,
+  "Porcine Vocal Interface": 1
  },
  "Nutrient Handler T1": {
   "Hyper-Evolution": 2,
   "Ultimate Genesis": 2,
-  "Commander's Log": 1,
+  "Compass": 1,
   "Turbulence": 1
  },
  "Growth Specialist T2": {
-  "Ultimate Genesis": 4,
-  "PECO Athletics - Javelin": 1,
+  "Hyper-Evolution": 1,
+  "Ultimate Genesis": 3,
+  "PECO Athletics - Triple Jump": 1,
   "The Art of War": 1
  },
  "Biosphere Director T3": {
   "Ultimate Genesis": 4,
-  "Fluctuations": 2,
-  "The Art of War": 3
+  "Maps": 2,
+  "Poushki": 2,
+  "The Art of War": 2
  },
  "Sustenance Architect T4": {
-  "Mitochondrial Surge": 2,
-  "Ultimate Genesis": 4,
-  "Ash Notebook": 1,
-  "Guitar Slinger": 3
+  "Ultimate Genesis": 5,
+  "Breakdown": 8,
+  "Maps": 2,
+  "The Art of War": 4
  },
  "Basic Supplier T1": {
   "Ultimate Genesis": 2,
-  "Assembly Instructions": 1,
-  "Commander's Log": 1,
-  "PECO Athletics - Triple Jump": 1
+  "Blueprints": 1,
+  "Poushki": 1,
+  "Small Tree": 1
  },
  "Distributor T2": {
   "Hyper-Evolution": 2,
   "Ultimate Genesis": 2,
-  "Commander's Log": 2,
+  "Commander's Log": 1,
   "Programming Manual": 1,
+  "Small Tree": 1,
   "Starshine": 1
  },
  "Resource Director T3": {
-  "Hyper-Evolution": 3,
-  "Ultimate Genesis": 2,
-  "Ash Notebook": 1
+  "Ultimate Genesis": 4,
+  "Commander's Log": 2,
+  "Lonelies": 1,
+  "Plans": 3,
+  "Starshine": 1,
+  "Sudoku Book": 3
  },
  "Logistics High Command T4": {
-  "Mitochondrial Surge": 1,
-  "Nanite Infusion": 2,
-  "Ultimate Genesis": 3,
-  "Ash Notebook": 1,
+  "Hyper-Evolution": 1,
+  "Ultimate Genesis": 4,
+  "Angerkoski": 4,
+  "Assembly Instructions": 13,
+  "Plans": 8,
   "Programming Manual": 2
  },
  "Door Jammer T1": {
@@ -128,135 +142,140 @@
   "Immune Boost": 1,
   "Mitochondrial Surge": 2,
   "Commander's Log": 1,
-  "Guitar": 1
+  "Compass": 1
  },
  "Guard T2": {
+  "Muscle Fortification": 1,
   "Mitochondrial Surge": 4,
-  "Ultimate Genesis": 1,
-  "Commander's Log": 3,
-  "Compass": 2,
-  "Crayon": 3,
-  "Guitar": 6
+  "Assembly Instructions": 1,
+  "Commander's Log": 2,
+  "PECO Athletics - Javelin": 1
  },
  "Station Protector T3": {
-  "High-Fat": 1,
-  "Bone-Fortify": 1,
-  "Immune Boost": 1,
-  "Hyper-Evolution": 2,
   "Mitochondrial Surge": 4,
-  "Nanite Infusion": 1,
-  "Angerkoski": 2,
-  "Commander's Log": 6
+  "Ultimate Genesis": 2,
+  "Commander's Log": 4,
+  "Crayon": 3,
+  "Meditation": 1,
+  "PECO Athletics - 100m Dash": 1,
+  "Small Tree": 3
  },
  "Guardian of Humanity T4": {
-  "Bone-Fortify": 1,
-  "Mitochondrial Surge": 6,
-  "Ultimate Genesis": 2,
-  "Commander's Log": 8,
-  "Guitar": 5,
-  "Meditation": 1,
-  "Oath Token": 1,
-  "Poushki": 2
+  "Hyper-Evolution": 2,
+  "Mitochondrial Surge": 7,
+  "Commander's Log": 11,
+  "Guitar Slinger": 4,
+  "Keys to Imagination": 1,
+  "Small Tree": 5
  },
  "Lab Technician T1": {
   "Ultimate Genesis": 2,
-  "Encyclopedia": 1,
-  "PECO Athletics - Triple Jump": 1
+  "Cognitive Cards": 1,
+  "Poushki": 1
  },
  "Field Research Scientist T2": {
   "Hyper-Evolution": 1,
   "Ultimate Genesis": 2,
-  "Assembly Instructions": 1,
-  "Encyclopedia": 1,
-  "PECO Athletics - Triple Jump": 1
+  "Love Letters": 1,
+  "Poushki": 1,
+  "Programming Manual": 1
  },
  "Theoretical Scientist T3": {
   "Hyper-Evolution": 1,
-  "Nanite Infusion": 2,
-  "Ultimate Genesis": 2,
-  "Ash Notebook": 1
+  "Ultimate Genesis": 3,
+  "Encyclopedia": 4,
+  "Poushki": 2,
+  "Programming Manual": 1
  },
  "Quantum Physicist T4": {
-  "Endura-Growth": 2,
-  "Nanite Infusion": 2,
-  "Ultimate Genesis": 3,
-  "Ash Notebook": 1,
-  "Programming Manual": 2
+  "Hyper-Evolution": 1,
+  "Ultimate Genesis": 4,
+  "Encyclopedia": 10,
+  "Fluctuations": 4,
+  "Programming Manual": 7
  },
  "Health Assistant T1": {
-  "High-Fat": 1,
-  "Nutri-Core": 7,
-  "Endura-Growth": 1,
-  "Immune Boost": 5,
-  "Neuro-Boost": 1,
-  "Maps": 1,
-  "PECO Athletics - Triple Jump": 1,
-  "Small Human Art": 1
+  "High-Fat": 5,
+  "Ultimate Genesis": 1,
+  "Cards": 1,
+  "Cognitive Cards": 1,
+  "Turbulence": 1
  },
  "Doctor T2": {
-  "High-Fat": 6,
-  "Hyper-Evolution": 1,
-  "Ultimate Genesis": 3,
-  "Cards": 1,
-  "Maps": 1,
-  "Small Human Art": 2,
-  "Starshine": 1
+  "High-Fat": 9,
+  "Ultimate Genesis": 1,
+  "Cards": 3,
+  "Love Letters": 1,
+  "Second Reality": 1
  },
  "Neuro Specialist T3": {
   "High-Fat": 14,
   "Ultimate Genesis": 1,
-  "Maps": 3,
-  "PECO Athletics - Triple Jump": 2,
+  "Encyclopedia": 2,
+  "Lonelies": 2,
+  "Maps": 1,
   "Porcine Vocal Interface": 1
  },
  "Neural Architect T4": {
-  "High-Fat": 26,
-  "Bone-Fortify": 1,
-  "Ash Notebook": 1,
-  "Maps": 2
+  "High-Fat": 20,
+  "Muscle Fortification": 5,
+  "Biology Notes": 2,
+  "Love Letters": 10,
+  "Porcine Vocal Interface": 2,
+  "Starshine": 4
  },
  "Room Supervisor T1": {
   "Ultimate Genesis": 2,
   "Cards": 1,
-  "Commander's Log": 1
+  "Maps": 1
  },
  "Station Quartermaster T2": {
   "Ultimate Genesis": 2,
   "Cards": 2,
-  "Commander's Log": 2
+  "Maps": 1,
+  "The Art of War": 1
  },
  "Settlement Governor T3": {
   "Ultimate Genesis": 3,
-  "Porcine Vocal Interface": 1,
-  "The Art of War": 4
+  "Cards": 6,
+  "Maps": 6,
+  "The Art of War": 1
  },
  "Colonel of Humanity T4": {
   "Ultimate Genesis": 6,
-  "Ash Notebook": 1,
-  "The Art of War": 2
+  "Commander's Log": 1,
+  "Compass": 1,
+  "Maps": 1,
+  "Porcine Vocal Interface": 1,
+  "Small Human Art": 6,
+  "Survival Diagrams": 1,
+  "The Art of War": 10
  },
  "Station Roamer T1": {
   "High-Fat": 1,
   "Immune Boost": 1,
   "Mitochondrial Surge": 2,
-  "Starshine": 1
+  "Second Reality": 1
  },
  "Star Analyzer T2": {
   "Mitochondrial Surge": 4,
   "Ultimate Genesis": 1,
-  "PECO Athletics - Triple Jump": 1
+  "Poushki": 1
  },
  "Mission Seeker T3": {
-  "Endura-Growth": 4,
-  "Neuro-Boost": 1,
-  "Mitochondrial Surge": 4,
-  "Starshine": 2
+  "Mitochondrial Surge": 3,
+  "Ultimate Genesis": 2,
+  "Guitar Slinger": 2
  },
  "Frontier Explorer T4": {
-  "Immune Boost": 1,
-  "Mitochondrial Surge": 3,
-  "Ultimate Genesis": 3,
-  "Starshine": 5
+  "Mitochondrial Surge": 5,
+  "Ultimate Genesis": 2,
+  "Keys to Imagination": 5
+ },
+ "_meta": {
+  "status": "optimal",
+  "transposium": false,
+  "spare_pct": 20
  },
  "Star Child": {
   "_note": "insert the Star Child MEMORY (quest 'True Choices' -> Courier Sieve Node Facility 169,-2). No food/memories from the shared pool; costs one Lazarus seed."

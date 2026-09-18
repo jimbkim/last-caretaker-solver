@@ -16,6 +16,8 @@ This tool:
 - **Global allocation** — instead of solving each human alone (which happily spends all 10 Ash Notebooks twice), an ILP (integer linear program) allocates *all humans at once* against real world counts, and proves which items have **zero slack**.
 - **Reserve list** — the items you should treat as sacred, which human each copy is saved for, and where to find them in the world.
 - **Collateral safety** — for each recipe it tells you whether a *different* profession could match the same stats (SAFE / RISK), using the game's tier-favoring rule.
+- **Transposium toggle** — off by default: recipes never require The Transposium (the Update 02 maze), so the plan works without visiting it. Check the box to let the solver use maze-only memories (Ash Notebook).
+- **Spare margin** — tell the plan to use only (100−N)% of every memory's world count, so a missed loot point doesn't sink the whole allocation. The UI states the tested joint-plan limits: **≤20% without Transposium, up to 50% with it** — beyond that an all-40 allocation is mathematically infeasible (per-human recipes still exist at higher margins; only the global plan breaks). Verified with `margin_probe.py`.
 
 ## Screenshots
 
@@ -50,7 +52,7 @@ python3 -m venv .venv
 
 That's it. Everything runs locally — no accounts, no network calls, no telemetry. The web UI reads CSVs in `data/` (scraped from the community wiki) and serves a single-page app.
 
-**Full plan mode** (the checkbox) runs the global ILP in a subprocess — a few minutes on first run, results cached to `global_plan.json`. Without it, recipes use a greedy plan that's still 40/40 feasible, just less optimal on rare items.
+**Full plan mode** (the checkbox) runs the global ILP in a subprocess — a few minutes on first run, results cached to `global_plan.json`. The cached plan remembers the mode it was built for (Transposium on/off, spare margin) — every recipe header says `Transposium included/EXCLUDED` alongside its source, the plan stamp shows the mode, and changing the mode marks the cached plan stale so re-calculating rebuilds it. Without full plan mode, recipes use a greedy plan that's still 40/40 feasible, just less optimal on rare items.
 
 ## How the solver works (one paragraph)
 
@@ -68,7 +70,8 @@ For each human, it picks a multiset of foods and memories minimizing a weighted 
 |---|---|
 | `webapp.py` | the whole web UI + API (stdlib `http.server`, no deps) |
 | `solver.py` | the ILP model (PuLP/CBC) — also a CLI: `solve`, `combo`, `hunt` |
-| `solve_all.py` | global all-humans solve, writes `global_plan.json` |
+| `solve_all.py` | global all-humans solve (`--include-transposium`, `--spare-pct N`), writes `global_plan.json` |
+| `margin_probe.py` | re-verifies the max feasible spare margin per mode (joint ILP scan) |
 | `make_reserve.py` | renders `RESERVE.md` from the current plan |
 | `data/*.csv` | foods, memories, humans (from the [wiki](https://thelastcaretaker.wiki.gg/)) |
 

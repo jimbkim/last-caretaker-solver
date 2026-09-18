@@ -123,6 +123,23 @@ def load():
                            "req": req, "tier": tier(r["Profession"])})
     return foods, memories, humans
 
+# Sites the wiki location-scrape counts as "The Transposium" maze.
+TRANSPOSIUM_SITES = ("transpos",)
+
+def transposium_only_memories():
+    """Memories findable only at The Transposium (the Update-02 maze,
+    southeast map). Exodus Station hits are scrape noise — it is where the
+    memory ITEMS are used/handed in, not where they spawn — so they don't
+    count as an alternative source. The solver can exclude these when the
+    player hasn't / doesn't want to use the maze."""
+    try:
+        locs = json.load(open(os.path.join(DATA, "memory_locations.json")))
+    except Exception:
+        return set()
+    return {n for n, ls in locs.items()
+            if any(any(t in l.lower() for t in TRANSPOSIUM_SITES) for l in ls)}
+
+
 def stat_vec(item, kind):
     v = [0.0] * 15
     names = FOOD_STATS if kind == "food" else MEM_STATS

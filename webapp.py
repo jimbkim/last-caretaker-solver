@@ -167,6 +167,12 @@ body.locked #busy{pointer-events:auto}
    </div>
   </div>
   <div class="planbar">
+   <label class="planmode"><input type="checkbox" id="transposiumMode" onchange="toggleTransposium()">
+    <b>Add The Transposium</b> <span class="small">maze (Update 02) — off = solver won't use Transposium-only memories (Ash Notebook)</span></label>
+   <label class="planmode">Spare margin
+    <input type="number" id="sparePct" value="0" min="0" max="70" step="5" style="width:3.2rem">%</label>
+   <span class="small">plan may only USE this much less of every memory — leaves slack so one missed loot point doesn't sink the plan (applies on re-calculate).<br>
+   Tested JOINT-plan limit: without Transposium the whole set only solves at <b>≤20%</b> spare; with Transposium checked, up to <b>50%</b>. Beyond that the allocation is mathematically infeasible (per-human recipes still exist at higher margins — only the all-40-at-once plan breaks).</span>
    <label class="planmode"><input type="checkbox" id="planMode" onchange="togglePlanMode()">
     <b>Full plan mode</b> — allocate ALL humans at once against real world counts
     <span class="small" id="planStamp"></span></label>
@@ -180,8 +186,9 @@ body.locked #busy{pointer-events:auto}
 
 <div id="busy" class="busy hidden">
  <div class="spinner"></div>
- <div class="busytxt">Calculating the GLOBAL plan for all 40 humans…<br>
-  <span class="small">the ILP allocates every Ash Notebook & Art of War to the human that needs it most — usually a few minutes</span></div>
+ <div class="busytxt">Calculating the GLOBAL plan for all 40 humans<br>
+  <b id="busyT"></b><br>
+  <span class="small">the ILP allocates every memory to the human that needs it most — usually a few minutes</span></div>
  <button class="cancelbtn" onclick="cancelPlan()">Cancel — back to single solves</button>
 </div>
 
@@ -264,11 +271,22 @@ async function showRecipe(full,committee,base){
  curHuman=base;
  $('crumb').innerHTML=`${committee} → ${base} → <b>recipe</b>`;
  $('recipe').textContent='solving…';
- render($('recipe'),await post('/api/solve',{target:full,plan:$('planMode').checked}));}
+ render($('recipe'),await post('/api/solve',{target:full,plan:$('planMode').checked,
+   include_transposium:$('transposiumMode').checked}));}
+
+function setSpareCap(){
+ const cap=$('transposiumMode').checked?50:20;
+ $('sparePct').max=cap;
+ if(+$('sparePct').value>cap)$('sparePct').value=cap;}
+function toggleTransposium(){
+ setSpareCap();
+ if(curHuman&&curCommittee) refreshCurrent();}
 
 // ── full-plan mode ──────────────────────────────────────────────────
 let planTimer=null;
 function setLocked(on){
+ if(on)$('busyT').textContent='Transposium: '+($('transposiumMode').checked?'INCLUDED':'EXCLUDED')
+   +' · spare margin '+($('sparePct').value||0)+'%';
  document.body.classList.toggle('locked',on);
  $('busy').classList.toggle('hidden',!on);}
 function togglePlanMode(){
@@ -285,9 +303,20 @@ function refreshCurrent(){
  if(el) el.click();}
 async function startPlan(force){
  setLocked(true);
- const r=await post('/api/plan/start',{force:!!force});
+ const r=await post('/api/plan/start',{force:!!force,
+   include_transposium:$('transposiumMode').checked,
+   spare_pct:+$('sparePct').value||0});
+ if(r.status==='stale'){   // cached plan was built for the other mode
+  const r2=await post('/api/plan/start',{force:true,
+   include_transposium:$('transposiumMode').checked,
+   spare_pct:+$('sparePct').value||0});
+  if(!r2.started){setLocked(false);$('recipe').textContent='could not recalculate.';return;}
+  planTimer=setInterval(pollPlan,1500);return;}
  if(r.error){setLocked(false);$('recipe').textContent='could not start: '+r.error;$('planMode').checked=false;return;}
  planTimer=setInterval(pollPlan,1500);}
+function planStampText(r){
+ return '  · calculated '+r.stamp+' · '+(r.transposium===false?'Transposium EXCLUDED':'Transposium included')
+   +((r.spare_pct||0)?(' · '+r.spare_pct+'% spare margin'):'');}
 async function pollPlan(){
  let r;
  try { r=await post('/api/plan/status',{}); }
@@ -295,8 +324,10 @@ async function pollPlan(){
  if(r.status==='running')return;
  clearInterval(planTimer);planTimer=null;setLocked(false);
  $('planMode').checked=(r.status==='done');
+ if(r.status==='done'&&r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
+ if(r.status==='done'&&r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
  $('replanBtn').style.display=r.status==='done'?'':'none';
- $('planStamp').textContent=r.status==='done'?('  · calculated '+r.stamp):'';
+ $('planStamp').textContent=r.status==='done'?planStampText(r):'';
  if(r.status==='done'){$('recipe').textContent='GLOBAL plan ready — click a human.';refreshCurrent();}
  else if(r.status==='cancelled'){$('recipe').textContent='plan cancelled — back to single solves.';}
  else {$('planMode').checked=false;$('recipe').textContent='plan failed: '+(r.msg||'unknown error');}}
@@ -304,11 +335,13 @@ function initPlanUI(){
  post('/api/plan/status',{}).then(r=>{
   if(r.status==='done'){
    $('planMode').checked=true;$('replanBtn').style.display='';
-   $('planStamp').textContent='  · last ran '+r.stamp+' — recipes come from the global plan';}
+   if(r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
+   if(r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
+   $('planStamp').textContent=planStampText(r)+' — recipes come from the global plan';}
   else if(r.status==='running'){
    $('planMode').checked=true;$('recipe').textContent='global plan calculating…';
    startPlan(false);}});}
-initPlanUI();
+initPlanUI();setSpareCap();
 async function cancelPlan(){
  await post('/api/plan/cancel',{});
  if(planTimer){clearInterval(planTimer);planTimer=null;}
@@ -405,7 +438,10 @@ class H(BaseHTTPRequestHandler):
         try:
             body = self._json()
             if self.path == "/api/plan/start":
-                self._send(200, json.dumps(plan_start(body.get("force", False))))
+                self._send(200, json.dumps(plan_start(
+                    body.get("force", False),
+                    bool(body.get("include_transposium", False)),
+                    int(body.get("spare_pct", 0) or 0))))
                 return
             if self.path == "/api/plan/status":
                 self._send(200, json.dumps(plan_status()))
@@ -427,7 +463,18 @@ class H(BaseHTTPRequestHandler):
 PLAN_PROC = None       # subprocess.Popen for solve_all.py
 PLAN_LOG = "/tmp/tlc-plan.log"
 
-def plan_start(force):
+def _plan_meta():
+    """Mode flags the cached plan was computed under (plans predating a
+    feature assumed its default)."""
+    try:
+        gp = json.load(open(_state("global_plan.json")))
+        m = gp.get("_meta", {})
+        return {"transposium": bool(m.get("transposium", True)),
+                "spare_pct": int(m.get("spare_pct", 0))}
+    except Exception:
+        return None
+
+def plan_start(force, include_transposium=False, spare_pct=0):
     global PLAN_PROC
     here = os.path.dirname(os.path.abspath(__file__))
     plan_file = _state("global_plan.json")
@@ -436,16 +483,25 @@ def plan_start(force):
     if _orphan_solver_pid():
         return {"started": False, "status": "running"}
     if not force and os.path.exists(plan_file):
+        want = {"transposium": bool(include_transposium),
+                "spare_pct": int(spare_pct)}
+        have = _plan_meta()
+        if have and any(have[k] != want[k] for k in want):
+            return {"started": False, "status": "stale"}
         return {"started": False, "status": "done"}
     if force:
         try:
             os.remove(plan_file)
         except FileNotFoundError:
             pass
+    cmd = [sys.executable, os.path.join(here, "solve_all.py"), "600"]
+    if include_transposium:
+        cmd.append("--include-transposium")
+    if spare_pct:
+        cmd += ["--spare-pct", str(int(spare_pct))]
     log = open(PLAN_LOG, "w")
     PLAN_PROC = subprocess.Popen(
-        [sys.executable, os.path.join(here, "solve_all.py"), "600"],
-        cwd=here, stdout=log, stderr=subprocess.STDOUT,
+        cmd, cwd=here, stdout=log, stderr=subprocess.STDOUT,
         start_new_session=True)
     return {"started": True, "status": "running"}
 
@@ -475,7 +531,8 @@ def plan_status():
         return {"status": "running"}
     if os.path.exists(plan_file):
         stamp = time.strftime("%H:%M", time.localtime(os.path.getmtime(plan_file)))
-        return {"status": "done", "stamp": stamp}
+        return {"status": "done", "stamp": stamp,
+                "transposium": _plan_transposium()}
     rc = PLAN_PROC.poll() if PLAN_PROC else None
     if rc == 130:
         return {"status": "cancelled"}
@@ -548,17 +605,30 @@ def api_solve(body):
     target = by_name(solver.humans_, body.get("target", ""))
     if not target:
         return "pick a profession first"
+    include_t = bool(body.get("include_transposium", False))
+    memories = solver.memories_
+    excl = set()
+    if not include_t:
+        excl = solver.transposium_only_memories()
+        memories = [m for m in memories if m["name"] not in excl]
+    avail_full = {i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
+    for n in excl:
+        avail_full[n] = 0
     chosen = None
     source = None
     gp = _load_global_plan()
+    if gp is not None:
+        # a plan computed under the OTHER transposium mode doesn't apply
+        plan_t = bool(gp.get("_meta", {}).get("transposium", True))
+        if plan_t != include_t:
+            gp = None
     want_plan = body.get("plan", True)
     if gp and want_plan and not body.get("solo") and target["name"] in gp:
         chosen = gp[target["name"]]
         source = "from the GLOBAL plan — whole-set allocation against real world counts"
     if chosen is None:
-        avail = None if (not want_plan and not gp) else {
-            i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
-        res = solver.solve_combo(target, solver.foods_, solver.memories_,
+        avail = None if (not want_plan and not gp) else avail_full
+        res = solver.solve_combo(target, solver.foods_, memories,
                                  solver.humans_, avail=avail)
         if not res:
             return f"INFEASIBLE: not enough items in the world for {target['name']} at current scarcity"
@@ -570,6 +640,10 @@ def api_solve(body):
         totals = _totals_of(chosen)
         matched = solver.satisfied(totals, solver.humans_)
         gused = _global_usage()
+    if include_t:
+        source += " · Transposium INCLUDED"
+    else:
+        source += " · Transposium excluded"
     mem_names = {m["name"]: m["avail"] for m in solver.memories_}
     lines = [f"RECIPE for {target['name']}", f"  {source}"]
     exhaust = []
