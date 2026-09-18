@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import solver
 
 PORT = 8765
+VERSION = "1.0.0"
 STATE_DIR = os.environ.get("SOLVER_STATE") or os.path.dirname(os.path.abspath(__file__))
 def _state(name):
     p = os.path.join(STATE_DIR, name)
@@ -133,7 +134,7 @@ body.locked{pointer-events:none;user-select:none}
 body.locked #busy{pointer-events:auto}
 .rsv{color:#f2cc60;cursor:help;margin-left:.2rem}
 </style></head><body>
-<h1>THE LAST CARETAKER <span>· human lab</span></h1>
+<h1>THE LAST CARETAKER <span>· human lab · v%%VERSION%%</span></h1>
 <div class="legend">
  <span><span class="tier1">T1</span> common</span><span class="dot">·</span>
  <span><span class="tier2">T2</span> skilled</span><span class="dot">·</span>
@@ -426,7 +427,8 @@ class H(BaseHTTPRequestHandler):
                 "foods": [{"name": f["name"], "avail": f["avail"]} for f in solver.foods_],
                 "memories": [{"name": m["name"], "avail": m["avail"]} for m in solver.memories_],
             }
-            self._send(200, PAGE.replace("%%DATA%%", json.dumps(data)))
+            self._send(200, PAGE.replace("%%DATA%%", json.dumps(data))
+                            .replace("%%VERSION%%", VERSION))
         else:
             self._send(404, b"not found", "text/plain")
 

@@ -75,6 +75,12 @@ For each human, it picks a multiset of foods and memories minimizing a weighted 
 | `make_reserve.py` | renders `RESERVE.md` from the current plan |
 | `data/*.csv` | foods, memories, humans (from the [wiki](https://thelastcaretaker.wiki.gg/)) |
 
+## Releases
+
+Versioned tags (`v1.0.0`, …); the web UI header shows the running version.
+
+- **v1.0.0** — recipes for all 40 committee humans, global ILP allocation, reserve list, collateral SAFE/RISK, Transposium toggle (off by default), spare-margin mode (≤20% w/o Transposium / 50% with), Docker image.
+
 ## Credits
 
 Game data from the [Last Caretaker wiki](https://thelastcaretaker.wiki.gg/) and [Root-DE/LastCaretaker](https://github.com/Root-DE/LastCaretaker). Location and Oath Token details from community wiki/Reddit/Steam findings — the game is in active development, so treat in-game behavior as ground truth over this tool.
