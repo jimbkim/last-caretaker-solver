@@ -139,7 +139,8 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .legend{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;color:#7d8590;font-size:.8rem;margin:.2rem 0 .6rem}
 .legend .dot{opacity:.5}
 .dots{display:flex;align-items:center;gap:.3rem}
-.dotc{display:inline-block;width:.65rem;height:.65rem;border-radius:50%}
+.dotc{display:inline-block;width:.65rem;height:.65rem;border-radius:50%;position:relative}
+.dotc.grown::after{content:"";position:absolute;inset:-3px;border:1.5px solid #7ee787;border-radius:4px}
 .dotc.t1{background:#7d8590}.dotc.t2{background:#7ee787}.dotc.t3{background:#a5d6ff}.dotc.t4{background:#f778ba}
 .smalltxt{font-size:.75rem;margin-left:.35rem}
 .loc{color:#a5d6ff}
@@ -170,7 +171,8 @@ body.locked #busy{pointer-events:auto}
  <span>◆ = memory — only WorldCount exist, fixed</span><span class="dot">·</span>
  <span>↻ = food — renewable, craft from organics</span><span class="dot">·</span>
  <span class="loc">⌖ = where to find it</span><span class="dot">·</span>
- <span class="rsv">★</span> = on the reserve list (hover for details)
+ <span class="rsv">★</span> = on the reserve list (hover for details)<span class="dot">·</span>
+ <span style="display:inline-block;width:.65rem;height:.65rem;border-radius:50%;background:#7d8590;position:relative"><span style="position:absolute;inset:-3px;border:1.5px solid #7ee787;border-radius:4px"></span></span> = that human is GROWN ✓
 </div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
@@ -283,13 +285,13 @@ DATA.committees.forEach(([cname,ctier,members],ci)=>{
  const d=document.createElement('div');d.className='committee';
  const dots=members.map(base=>{
    const p=profByBase[base];
-   return p?`<i class="dotc t${p.tier}" title="T${p.tier} ${base}"></i>`:'';}).join('');
+   return p?`<i class="dotc t${p.tier}" data-base="${esc(base)}" title="T${p.tier} ${base}"></i>`:'';}).join('');
  d.innerHTML=`<span>${cname}</span><span class="dots">${dots}<span class="tier${ctier} smalltxt"> unlock T${ctier}</span></span>`;
  d.onclick=()=>showHumans(ci,cname,d); $('committeeList').append(d);});
 // special non-committee humans
 DATA.specials.forEach(([name,,notes],si)=>{
  const d=document.createElement('div');d.className='committee special';
- d.innerHTML=`<span>${name}</span><span class="dots"><i class="dotc t4"></i><span class="smalltxt small">not in a committee</span></span>`;
+ d.innerHTML=`<span>${name}</span><span class="dots"><i class="dotc t4" data-base="${esc(name)}"></i><span class="smalltxt small">not in a committee</span></span>`;
  d.onclick=()=>{
   document.querySelectorAll('.committee').forEach(x=>x.classList.toggle('on',x===d));
   $('humanList').innerHTML='<span class="small">special — no tier recipe</span>';
@@ -344,6 +346,9 @@ function repaintHumans(){
  showHumans(i,curCommittee,els[i]||els[0]);}
 function paintGrown(){
  const el=$('grownList');
+ const grownBases=new Set(Object.keys(GROWN).map(n=>n.replace(/ T\\d+$/,'')));
+ document.querySelectorAll('.dotc[data-base]').forEach(d=>
+   d.classList.toggle('grown',grownBases.has(d.dataset.base)));
  document.querySelectorAll('.tabs .tab').forEach(t=>{
   if(t.dataset.s==='grown') t.textContent=`Grown ✓ ${Object.keys(GROWN).length}/41`;});
  if(!el) return; el.innerHTML='';
