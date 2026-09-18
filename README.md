@@ -18,6 +18,7 @@ This tool:
 - **Collateral safety** — for each recipe it tells you whether a *different* profession could match the same stats (SAFE / RISK), using the game's tier-favoring rule.
 - **Transposium toggle** — off by default: recipes never require The Transposium (the Update 02 maze), so the plan works without visiting it. Check the box to let the solver use maze-only memories (Ash Notebook).
 - **Spare margin** — tell the plan to use only (100−N)% of every memory's world count, so a missed loot point doesn't sink the whole allocation. The UI states the tested joint-plan limits: **≤20% without Transposium, up to 50% with it** — beyond that an all-40 allocation is mathematically infeasible (per-human recipes still exist at higher margins; only the global plan breaks). Verified with `margin_probe.py`.
+- **Grown tracker** — as you grow humans in-game, `mark as GROWN ✓` freezes the exact recipe you followed (item counts + timestamp + solver mode) into `grown.json`, so later re-plans can never rewrite what was actually spent. Spent copies are subtracted from world supply in every later solve, the committee dots ring green as you progress, and the reserve list splits each rare memory into grown-history vs still-to-loot.
 
 ## Screenshots
 
@@ -52,6 +53,8 @@ python3 -m venv .venv
 
 That's it. Everything runs locally — no accounts, no network calls, no telemetry. The web UI reads CSVs in `data/` (scraped from the community wiki) and serves a single-page app.
 
+State lives in the run directory (or `$SOLVER_STATE` for Docker): `global_plan.json` is the cached global plan, `grown.json` is your grown-humans ledger. Back both up alongside your notes — they're your save-file.
+
 **Full plan mode** (the checkbox) runs the global ILP in a subprocess — a few minutes on first run, results cached to `global_plan.json`. The cached plan remembers the mode it was built for (Transposium on/off, spare margin) — every recipe header says `Transposium included/EXCLUDED` alongside its source, the plan stamp shows the mode, and changing the mode marks the cached plan stale so re-calculating rebuilds it. Without full plan mode, recipes use a greedy plan that's still 40/40 feasible, just less optimal on rare items.
 
 ## How the solver works (one paragraph)
@@ -79,6 +82,7 @@ For each human, it picks a multiset of foods and memories minimizing a weighted 
 
 Versioned tags (`v1.0.0`, …); the web UI header shows the running version.
 
+- **v1.1.0** — **Grown tracker**: 'mark as GROWN ✓' on any recipe freezes the exact item list + solve mode into `grown.json` (un-mark restores the items); grown humans show their frozen record, get a ✓ badge and a green ring on their committee dot, and their consumed copies are subtracted from world supply in every other solve, the reserve list, and RESERVE.md (which now renders from the same source as the UI, with grown-history vs future-need split). New `Grown ✓ N/41` tab. Spare-margin box now warns 'settings changed — press re-calculate' when it no longer matches the cached plan, and pre-fills from the plan's metadata.
 - **v1.0.1** — "What would THIS grow?" chips now carry −/+ counts, so a full recipe (e.g. Ultimate Genesis ×3) replays exactly instead of matching nothing. Confirmed in-game: the growth-prediction list ranks by stat fit, but the pod still grows the highest-tier satisfied profession (tier-favoring rule holds).
 - **v1.0.0** — recipes for all 40 committee humans, global ILP allocation, reserve list, collateral SAFE/RISK, Transposium toggle (off by default), spare-margin mode (≤20% w/o Transposium / 50% with), Docker image.
 

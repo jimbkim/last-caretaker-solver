@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import solver
 
 PORT = 8765
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 STATE_DIR = os.environ.get("SOLVER_STATE") or os.path.dirname(os.path.abspath(__file__))
 def _state(name):
     p = os.path.join(STATE_DIR, name)
