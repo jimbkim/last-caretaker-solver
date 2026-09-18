@@ -74,6 +74,28 @@ def _load_global_plan():
     except Exception:
         return None
 
+def _grown():
+    """Frozen record of humans the player marked as grown: name ->
+    {recipe, stamp, transposium, spare_pct}. The recipe is locked at mark
+    time — later re-plans never rewrite what was actually consumed."""
+    try:
+        return json.load(open(_state("grown.json")))
+    except Exception:
+        return {}
+
+def _save_grown(g):
+    with open(_state("grown.json"), "w") as f:
+        json.dump(g, f, indent=1, sort_keys=True)
+
+def _consumed():
+    """item -> copies already spent by grown humans (gone from the world)."""
+    used = {}
+    for rec in _grown().values():
+        for k, v in rec.get("recipe", {}).items():
+            if isinstance(v, int):
+                used[k] = used.get(k, 0) + v
+    return used
+
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>Last Caretaker — Human Lab</title>
 <style>
@@ -117,7 +139,8 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 .legend{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;color:#7d8590;font-size:.8rem;margin:.2rem 0 .6rem}
 .legend .dot{opacity:.5}
 .dots{display:flex;align-items:center;gap:.3rem}
-.dotc{display:inline-block;width:.65rem;height:.65rem;border-radius:50%}
+.dotc{display:inline-block;width:.65rem;height:.65rem;border-radius:50%;position:relative}
+.dotc.grown::after{content:"";position:absolute;inset:-3px;border:1.5px solid #7ee787;border-radius:4px}
 .dotc.t1{background:#7d8590}.dotc.t2{background:#7ee787}.dotc.t3{background:#a5d6ff}.dotc.t4{background:#f778ba}
 .smalltxt{font-size:.75rem;margin-left:.35rem}
 .loc{color:#a5d6ff}
@@ -133,6 +156,8 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 body.locked{pointer-events:none;user-select:none}
 body.locked #busy{pointer-events:auto}
 .rsv{color:#f2cc60;cursor:help;margin-left:.2rem}
+.warnpulse{border-color:#f2cc60 !important;color:#f2cc60;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{border-color:#1f6feb}}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab · v%%VERSION%%</span></h1>
 <div class="legend">
@@ -146,13 +171,15 @@ body.locked #busy{pointer-events:auto}
  <span>◆ = memory — only WorldCount exist, fixed</span><span class="dot">·</span>
  <span>↻ = food — renewable, craft from organics</span><span class="dot">·</span>
  <span class="loc">⌖ = where to find it</span><span class="dot">·</span>
- <span class="rsv">★</span> = on the reserve list (hover for details)
+ <span class="rsv">★</span> = on the reserve list (hover for details)<span class="dot">·</span>
+ <span style="display:inline-block;width:.65rem;height:.65rem;border-radius:50%;background:#7d8590;position:relative"><span style="position:absolute;inset:-3px;border:1.5px solid #7ee787;border-radius:4px"></span></span> = that human is GROWN ✓
 </div>
 <div class="tabs">
  <button class="tab on" data-s="tree">Committees → humans → recipes</button>
  <button class="tab" data-s="combo">What would THIS grow?</button>
  <button class="tab" data-s="hunt">Hunt list</button>
  <button class="tab" data-s="reserve">Reserve list</button>
+ <button class="tab" data-s="grown">Grown ✓</button>
 </div>
 
 <section id="s-tree" class="on">
@@ -171,7 +198,7 @@ body.locked #busy{pointer-events:auto}
    <label class="planmode"><input type="checkbox" id="transposiumMode" onchange="toggleTransposium()">
     <b>Add The Transposium</b> <span class="small">maze (Update 02) — off = solver won't use Transposium-only memories (Ash Notebook)</span></label>
    <label class="planmode">Spare margin
-    <input type="number" id="sparePct" value="0" min="0" max="70" step="5" style="width:3.2rem">%</label>
+    <input type="number" id="sparePct" value="0" min="0" max="70" step="5" style="width:3.2rem" onchange="marginChanged()">%</label>
    <span class="small">plan may only USE this much less of every memory — leaves slack so one missed loot point doesn't sink the plan (applies on re-calculate).<br>
    Tested JOINT-plan limit: without Transposium the whole set only solves at <b>≤20%</b> spare; with Transposium checked, up to <b>50%</b>. Beyond that the allocation is mathematically infeasible (per-human recipes still exist at higher margins — only the all-40-at-once plan breaks).</span>
    <label class="planmode"><input type="checkbox" id="planMode" onchange="togglePlanMode()">
@@ -181,7 +208,8 @@ body.locked #busy{pointer-events:auto}
   </div>
  </div>
  <div class="sep"><span>OUTPUT</span></div>
- <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b></div>
+ <div class="breadcrumb" id="crumb">committee → human → <b>recipe</b>
+  <button class="tab" id="grownBtn" style="display:none;margin-left:.8rem"></button></div>
  <pre id="recipe">pick a committee, then a human — the recipe appears here.</pre>
 </section>
 
@@ -226,6 +254,19 @@ body.locked #busy{pointer-events:auto}
  </div>
 </section>
 
+<section id="s-grown">
+ <div class="cols2">
+  <div>
+   <div class="lbl">GROWN HUMANS (frozen recipes)</div>
+   <div class="panel" id="grownList"><span class="small">none yet — mark one from its recipe.</span></div>
+  </div>
+  <div>
+   <div class="lbl">DETAILS</div>
+   <pre id="result6" style="min-height:10rem">click an item…</pre>
+  </div>
+ </div>
+</section>
+
 <script>
 const DATA = %%DATA%%;
 const $ = id => document.getElementById(id);
@@ -237,18 +278,20 @@ const profByBase = {};
 DATA.professions.forEach(p=>{profByBase[p.name.replace(/ T\\d+$/,'')]=p;});
 
 // ── tab 1: committees -> humans -> recipe ──────────────────────────
-let curCommittee=null, curHuman=null;
+let curCommittee=null, curHuman=null, curFull=null;
+let GROWN={};
+post('/api/grown',{}).then(r=>{try{GROWN=JSON.parse(r.html);}catch(e){} paintGrown();refreshCurrent();});
 DATA.committees.forEach(([cname,ctier,members],ci)=>{
  const d=document.createElement('div');d.className='committee';
  const dots=members.map(base=>{
    const p=profByBase[base];
-   return p?`<i class="dotc t${p.tier}" title="T${p.tier} ${base}"></i>`:'';}).join('');
+   return p?`<i class="dotc t${p.tier}" data-base="${esc(base)}" title="T${p.tier} ${base}"></i>`:'';}).join('');
  d.innerHTML=`<span>${cname}</span><span class="dots">${dots}<span class="tier${ctier} smalltxt"> unlock T${ctier}</span></span>`;
  d.onclick=()=>showHumans(ci,cname,d); $('committeeList').append(d);});
 // special non-committee humans
 DATA.specials.forEach(([name,,notes],si)=>{
  const d=document.createElement('div');d.className='committee special';
- d.innerHTML=`<span>${name}</span><span class="dots"><i class="dotc t4"></i><span class="smalltxt small">not in a committee</span></span>`;
+ d.innerHTML=`<span>${name}</span><span class="dots"><i class="dotc t4" data-base="${esc(name)}"></i><span class="smalltxt small">not in a committee</span></span>`;
  d.onclick=()=>{
   document.querySelectorAll('.committee').forEach(x=>x.classList.toggle('on',x===d));
   $('humanList').innerHTML='<span class="small">special — no tier recipe</span>';
@@ -263,24 +306,76 @@ function showHumans(ci,cname,el){
  DATA.committees[ci][2].forEach(base=>{
   const p=profByBase[base]; if(!p) return;
   const h=document.createElement('div');h.className='human';
-  h.innerHTML=`<span class="tier${p.tier}">T${p.tier} ${base}</span>`;
+  const grown=Object.keys(GROWN).some(n=>n.replace(/ T\\d+$/,'')===base);
+  h.innerHTML=`<span class="tier${p.tier}">T${p.tier} ${base}</span>${grown?'<span class="ok">✓ grown</span>':''}`;
   h.onclick=()=>{document.querySelectorAll('.human').forEach(x=>x.classList.toggle('on',x===h));
     showRecipe(p.name,cname,base);};
   hl.append(h);});
 }
 async function showRecipe(full,committee,base){
- curHuman=base;
- $('crumb').innerHTML=`${committee} → ${base} → <b>recipe</b>`;
+ curHuman=base; curFull=full;
+ $('crumb').innerHTML=`${committee} → ${base} → <b>recipe</b>`
+  +` <button class="tab" id="grownBtn" style="margin-left:.8rem"></button>`;
+ syncGrownBtn();
  $('recipe').textContent='solving…';
  render($('recipe'),await post('/api/solve',{target:full,plan:$('planMode').checked,
    include_transposium:$('transposiumMode').checked}));}
+
+function syncGrownBtn(){
+ const b=$('grownBtn'); if(!b||!curFull) return;
+ const done=!!GROWN[curFull];
+ b.textContent=done?'✓ GROWN — un-mark':'mark as GROWN ✓';
+ b.classList.toggle('ok',done);
+ b.onclick=done?unmarkGrown:markGrown;}
+async function markGrown(){
+ $('recipe').textContent='recording…';
+ render($('recipe'),await post('/api/grown/mark',{target:curFull}));
+ GROWN=JSON.parse((await post('/api/grown',{})).html||'{}');
+ paintGrown(); repaintHumans();
+ showRecipe(curFull,curCommittee,curHuman);}   // shows the FROZEN record
+async function unmarkGrown(){
+ render($('recipe'),await post('/api/grown/unmark',{target:curFull}));
+ GROWN=JSON.parse((await post('/api/grown',{})).html||'{}');
+ paintGrown(); repaintHumans();
+ showRecipe(curFull,curCommittee,curHuman);}
+function repaintHumans(){
+ if(!curCommittee) return;
+ const i=DATA.committees.findIndex(c=>c[0]===curCommittee);
+ if(i<0) return;
+ const els=[...document.querySelectorAll('.committee')];
+ showHumans(i,curCommittee,els[i]||els[0]);}
+function paintGrown(){
+ const el=$('grownList');
+ const grownBases=new Set(Object.keys(GROWN).map(n=>n.replace(/ T\\d+$/,'')));
+ document.querySelectorAll('.dotc[data-base]').forEach(d=>
+   d.classList.toggle('grown',grownBases.has(d.dataset.base)));
+ document.querySelectorAll('.tabs .tab').forEach(t=>{
+  if(t.dataset.s==='grown') t.textContent=`Grown ✓ ${Object.keys(GROWN).length}/41`;});
+ if(!el) return; el.innerHTML='';
+ const names=Object.keys(GROWN).sort();
+ if(!names.length){el.innerHTML='<span class="small">none yet — mark one from its recipe.</span>';return;}
+ names.forEach(n=>{
+  const rec=GROWN[n];
+  const d=document.createElement('div');d.className='human';
+  d.innerHTML=`<span class="tier${(n.match(/T(\\d+)$/)||[,'?'])[1]}">${esc(n)}</span><span class="small">${rec.stamp}</span>`;
+  d.onclick=()=>{document.querySelectorAll('#grownList .human').forEach(x=>x.classList.toggle('on',x===d));
+    $('result6').textContent=fmtGrown(n,rec);};
+  el.append(d);});
+ document.querySelectorAll('.tabs .tab').forEach(t=>{
+  if(t.dataset.s==='grown') t.textContent=`Grown ✓ ${names.length}/41`;});}
+function fmtGrown(n,r){
+ let t=`${n} — GROWN ✓ (recorded ${r.stamp})\\nmode: Transposium ${r.transposium?'INCLUDED':'excluded'} · spare ${r.spare_pct||0}%\\n\\nITEMS ACTUALLY CONSUMED:\\n`;
+ for(const [k,v] of Object.entries(r.recipe).sort((a,b)=>b[1]-a[1])){
+   if(k==='_note'){t+='  '+v+'\\n';continue;}
+   t+=`  ${String(v).padStart(3)} x ${k}\\n`;}
+ return t;}
 
 function setSpareCap(){
  const cap=$('transposiumMode').checked?50:20;
  $('sparePct').max=cap;
  if(+$('sparePct').value>cap)$('sparePct').value=cap;}
 function toggleTransposium(){
- setSpareCap();
+ setSpareCap(); marginChanged();
  if(curHuman&&curCommittee) refreshCurrent();}
 
 // ── full-plan mode ──────────────────────────────────────────────────
@@ -317,7 +412,20 @@ async function startPlan(force){
  planTimer=setInterval(pollPlan,1500);}
 function planStampText(r){
  return '  · calculated '+r.stamp+' · '+(r.transposium===false?'Transposium EXCLUDED':'Transposium included')
-   +((r.spare_pct||0)?(' · '+r.spare_pct+'% spare margin'):'');}
+   +((r.spare_pct||0)?(' · '+r.spare_pct+'% spare margin'):' · 0% spare margin');}
+let PLAN_META=null;   // mode flags of the CALCULATED plan on disk
+function marginChanged(){
+ if(!$('planMode').checked||!PLAN_META) return;
+ const want=+$('sparePct').value||0;
+ if(want!==PLAN_META.spare_pct||$('transposiumMode').checked!==!!PLAN_META.transposium){
+   $('planStamp').className='small warn';
+   $('planStamp').textContent=`  · ⚠ settings changed — cached plan still ${PLAN_META.spare_pct||0}%`
+     +` · press re-calculate`;
+   $('replanBtn').classList.add('warnpulse');
+ } else {
+   $('planStamp').className='small';
+   $('planStamp').textContent=planStampText(PLAN_META)+' — recipes come from the global plan';
+   $('replanBtn').classList.remove('warnpulse');}}
 async function pollPlan(){
  let r;
  try { r=await post('/api/plan/status',{}); }
@@ -327,6 +435,8 @@ async function pollPlan(){
  $('planMode').checked=(r.status==='done');
  if(r.status==='done'&&r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
  if(r.status==='done'&&r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
+ PLAN_META=r.status==='done'?{transposium:r.transposium,spare_pct:r.spare_pct||0,stamp:r.stamp}:null;
+ if(r.status==='done'){$('planStamp').className='small';$('replanBtn').classList.remove('warnpulse');}
  $('replanBtn').style.display=r.status==='done'?'':'none';
  $('planStamp').textContent=r.status==='done'?planStampText(r):'';
  if(r.status==='done'){$('recipe').textContent='GLOBAL plan ready — click a human.';refreshCurrent();}
@@ -338,6 +448,7 @@ function initPlanUI(){
    $('planMode').checked=true;$('replanBtn').style.display='';
    if(r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
    if(r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
+   PLAN_META={transposium:r.transposium,spare_pct:r.spare_pct||0,stamp:r.stamp};
    $('planStamp').textContent=planStampText(r)+' — recipes come from the global plan';}
   else if(r.status==='running'){
    $('planMode').checked=true;$('recipe').textContent='global plan calculating…';
@@ -459,7 +570,9 @@ class H(BaseHTTPRequestHandler):
                 self._send(200, json.dumps(plan_cancel()))
                 return
             fn = {"/api/solve": api_solve, "/api/combo": api_combo,
-                  "/api/hunt": api_hunt, "/api/reserve": api_reserve}.get(self.path)
+                  "/api/hunt": api_hunt, "/api/reserve": api_reserve,
+                  "/api/grown": api_grown, "/api/grown/mark": api_grown_mark,
+                  "/api/grown/unmark": api_grown_unmark}.get(self.path)
             if fn:
                 self._send(200, json.dumps({"html": fn(body)}))
             else:
@@ -541,7 +654,8 @@ def plan_status():
     if os.path.exists(plan_file):
         stamp = time.strftime("%H:%M", time.localtime(os.path.getmtime(plan_file)))
         return {"status": "done", "stamp": stamp,
-                "transposium": _plan_transposium()}
+                "transposium": (_plan_meta() or {}).get("transposium", True),
+                "spare_pct": (_plan_meta() or {}).get("spare_pct", 0)}
     rc = PLAN_PROC.poll() if PLAN_PROC else None
     if rc == 130:
         return {"status": "cancelled"}
@@ -575,6 +689,45 @@ def plan_cancel():
 def by_name(items, name):
     return next((i for i in items if i["name"].lower() == name.lower()), None)
 
+def api_grown(body):
+    return json.dumps(_grown(), indent=1)
+
+LAST_RECIPE = {}   # target -> {"chosen":…, "transposium":…, } from the last solve
+
+def api_grown_mark(body):
+    """Freeze the recipe currently shown for one human as 'grown'."""
+    name = body.get("target", "")
+    target = by_name(solver.humans_, name)
+    if not target:
+        return "pick a profession first"
+    name = target["name"]
+    rec = LAST_RECIPE.get(name)
+    if not rec or not rec.get("chosen"):
+        return "nothing to record — show a recipe for this human first"
+    recipe = {k: v for k, v in rec["chosen"].items()
+              if isinstance(v, int) and v}
+    if rec.get("note"):
+        recipe["_note"] = rec["note"]
+    g = _grown()
+    g[name] = {"recipe": recipe,
+               "stamp": time.strftime("%Y-%m-%d %H:%M"),
+               "transposium": bool(rec.get("transposium", False)),
+               "spare_pct": int(rec.get("spare_pct", 0) or 0)}
+    _save_grown(g)
+    return f"GROWN recorded: {name} ({len(g)} total) — items marked consumed."
+
+def api_grown_unmark(body):
+    name = body.get("target", "")
+    target = by_name(solver.humans_, name)
+    if not target:
+        return "pick a profession first"
+    g = _grown()
+    if target["name"] not in g:
+        return f"{target['name']} was not marked grown."
+    del g[target["name"]]
+    _save_grown(g)
+    return f"{target['name']} un-marked — its items are back in the world pool."
+
 def _totals_of(chosen):
     totals = [0.0] * 15
     for name, c in chosen.items():
@@ -587,12 +740,18 @@ def _totals_of(chosen):
     return totals
 
 def _global_usage():
-    """item -> count across the whole global plan (None if no plan file)."""
+    """item -> count across the whole global plan (None if no plan file).
+    Rows of already-grown humans are EXCLUDED — their copies live in the
+    frozen ledger (_consumed), not in the plan's future claims; counting
+    both would double-charge the world supply."""
     gp = _load_global_plan()
     if not gp:
         return None
+    grown = _grown()
     used = {}
-    for items in gp.values():
+    for human, items in gp.items():
+        if human in grown or not isinstance(items, dict):
+            continue
         for k, v in items.items():
             if isinstance(v, int):
                 used[k] = used.get(k, 0) + v
@@ -610,10 +769,48 @@ def rsv_star(item):
     tip = tip.replace('"', "'").replace("«", "(").replace("»", ")")
     return f" «{tip}»★"
 
+def _fmt_grown(name, rec):
+    """Render a frozen grown-record: what was ACTUALLY consumed."""
+    mem_names = {m["name"]: m["avail"] for m in solver.memories_}
+    lines = [f"{name} — GROWN ✓  (recorded {rec['stamp']},",
+             f"  mode: Transposium {'INCLUDED' if rec.get('transposium') else 'excluded'}"
+             f" · spare margin {rec.get('spare_pct', 0)}%",
+             "  this is the FROZEN recipe — later re-plans do not change it)", ""]
+    lines.append("  ITEMS ACTUALLY CONSUMED:")
+    if rec["recipe"].get("_note"):
+        lines.append("  " + rec["recipe"]["_note"])
+    for k, v in sorted(rec["recipe"].items(), key=lambda kv: (-kv[1], kv[0])):
+        if k == "_note":
+            continue
+        if k in mem_names:
+            lines.append(f"  ◆ {v:>3} x {k}   (of {mem_names[k]} that ever existed)")
+            where = MEMORY_NOTES.get(k) or MEMORY_LOCATIONS.get(k)
+            if isinstance(where, str):
+                lines.append(f"      ⌖ {where}")
+        else:
+            lines.append(f"  ↻ {v:>3} x {k}")
+    cons = _consumed()
+    tight = [f"{k}: {mem_names[k]} exist, {cons.get(k,0)} spent by grown humans, "
+             f"{mem_names[k]-cons.get(k,0)} left"
+             for k in rec["recipe"] if k in mem_names
+             and mem_names[k] - cons.get(k, 0) <= 2]
+    if tight:
+        lines.append("")
+        lines.append("  !! memory supply now critical:")
+        for t in tight:
+            lines.append("  !! " + t)
+    lines.append("")
+    lines.append("  (un-mark to return these items to the world pool)")
+    return "\n".join(lines)
+
 def api_solve(body):
     target = by_name(solver.humans_, body.get("target", ""))
     if not target:
         return "pick a profession first"
+    consumed = _consumed()
+    grown = _grown().get(target["name"])
+    if grown:
+        return _fmt_grown(target["name"], grown)
     include_t = bool(body.get("include_transposium", False))
     memories = solver.memories_
     excl = set()
@@ -623,6 +820,9 @@ def api_solve(body):
     avail_full = {i["name"]: i["avail"] for i in solver.foods_ + solver.memories_}
     for n in excl:
         avail_full[n] = 0
+    for k, v in consumed.items():          # copies already spent are gone
+        if k in avail_full:
+            avail_full[k] = max(0, avail_full[k] - v)
     chosen = None
     source = None
     gp = _load_global_plan()
@@ -654,8 +854,22 @@ def api_solve(body):
     else:
         source += " · Transposium excluded"
     mem_names = {m["name"]: m["avail"] for m in solver.memories_}
+    LAST_RECIPE[target["name"]] = {
+        "chosen": chosen, "transposium": include_t,
+        "spare_pct": (_plan_meta() or {}).get("spare_pct", 0)}
     lines = [f"RECIPE for {target['name']}", f"  {source}"]
     exhaust = []
+    if consumed and gused:
+        over = [f"{k}: the cached plan claims {gused.get(k,0)}, but only "
+                f"{mem_names.get(k,0)} exist and {consumed.get(k,0)} "
+                f"were already spent by grown humans"
+                for k in gused
+                if k in mem_names and gused.get(k, 0) + consumed.get(k, 0) > mem_names[k]]
+        if over:
+            lines.append(f"  !! this GLOBAL plan row ignores grown humans — "
+                         "re-calculate to rebalance:")
+            for o in over:
+                lines.append("  !! " + o)
     mem_lines, food_lines = [], []
     for k, v in sorted(chosen.items(), key=lambda kv: (-kv[1], kv[0])):
         if k in mem_names:
@@ -775,16 +989,26 @@ def reserve_data():
         except Exception:
             return []
     mem_avail = {m["name"]: m["avail"] for m in solver.memories_}
+    grown = _grown()
     used_by = {}
+    def claim(mem, who, cnt, done=False):
+        used_by.setdefault(mem, []).append([who, cnt, done])
     for human, items in plan.items():
+        if human in grown:
+            continue   # already grown: its copy is history, not a future claim
         for k, v in items.items():
             if k in mem_avail and isinstance(v, int):
-                used_by.setdefault(k, []).append([human, v])
+                claim(k, human, v)
+    for human, rec in grown.items():      # frozen: what was actually spent
+        for k, v in rec["recipe"].items():
+            if k in mem_avail and isinstance(v, int):
+                claim(k, human + " (grown)", v, True)
     out = []
     for m, claimers in used_by.items():
-        total = sum(c for _, c in claimers)
+        total = sum(c for _, c, _ in claimers)
+        future = sum(c for _, c, d in claimers if not d)
         slack = mem_avail[m] - total
-        if total < 0.6 * mem_avail[m]:
+        if future < 0.6 * mem_avail[m] and total < 0.6 * mem_avail[m]:
             continue   # not reserve-worthy; general stash is fine
         if slack <= 0:
             verdict = "ZERO SPARE — reserve every single one"
@@ -809,9 +1033,6 @@ def api_reserve(body):
     for r in rows:
         lines.append(f"  {r['name']} — {r['verdict']}")
     return "\n".join(lines)
-
-def api_reserve_map(body):
-    return {"json": reserve_data()}
 
 def api_hunt(body):
     n = max(5, int(body.get("n", 25)))
