@@ -155,6 +155,8 @@ input[type=number]{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;pad
 body.locked{pointer-events:none;user-select:none}
 body.locked #busy{pointer-events:auto}
 .rsv{color:#f2cc60;cursor:help;margin-left:.2rem}
+.warnpulse{border-color:#f2cc60 !important;color:#f2cc60;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{border-color:#1f6feb}}
 </style></head><body>
 <h1>THE LAST CARETAKER <span>· human lab · v%%VERSION%%</span></h1>
 <div class="legend">
@@ -194,7 +196,7 @@ body.locked #busy{pointer-events:auto}
    <label class="planmode"><input type="checkbox" id="transposiumMode" onchange="toggleTransposium()">
     <b>Add The Transposium</b> <span class="small">maze (Update 02) — off = solver won't use Transposium-only memories (Ash Notebook)</span></label>
    <label class="planmode">Spare margin
-    <input type="number" id="sparePct" value="0" min="0" max="70" step="5" style="width:3.2rem">%</label>
+    <input type="number" id="sparePct" value="0" min="0" max="70" step="5" style="width:3.2rem" onchange="marginChanged()">%</label>
    <span class="small">plan may only USE this much less of every memory — leaves slack so one missed loot point doesn't sink the plan (applies on re-calculate).<br>
    Tested JOINT-plan limit: without Transposium the whole set only solves at <b>≤20%</b> spare; with Transposium checked, up to <b>50%</b>. Beyond that the allocation is mathematically infeasible (per-human recipes still exist at higher margins — only the all-40-at-once plan breaks).</span>
    <label class="planmode"><input type="checkbox" id="planMode" onchange="togglePlanMode()">
@@ -368,7 +370,7 @@ function setSpareCap(){
  $('sparePct').max=cap;
  if(+$('sparePct').value>cap)$('sparePct').value=cap;}
 function toggleTransposium(){
- setSpareCap();
+ setSpareCap(); marginChanged();
  if(curHuman&&curCommittee) refreshCurrent();}
 
 // ── full-plan mode ──────────────────────────────────────────────────
@@ -405,7 +407,20 @@ async function startPlan(force){
  planTimer=setInterval(pollPlan,1500);}
 function planStampText(r){
  return '  · calculated '+r.stamp+' · '+(r.transposium===false?'Transposium EXCLUDED':'Transposium included')
-   +((r.spare_pct||0)?(' · '+r.spare_pct+'% spare margin'):'');}
+   +((r.spare_pct||0)?(' · '+r.spare_pct+'% spare margin'):' · 0% spare margin');}
+let PLAN_META=null;   // mode flags of the CALCULATED plan on disk
+function marginChanged(){
+ if(!$('planMode').checked||!PLAN_META) return;
+ const want=+$('sparePct').value||0;
+ if(want!==PLAN_META.spare_pct||$('transposiumMode').checked!==!!PLAN_META.transposium){
+   $('planStamp').className='small warn';
+   $('planStamp').textContent=`  · ⚠ settings changed — cached plan still ${PLAN_META.spare_pct||0}%`
+     +` · press re-calculate`;
+   $('replanBtn').classList.add('warnpulse');
+ } else {
+   $('planStamp').className='small';
+   $('planStamp').textContent=planStampText(PLAN_META)+' — recipes come from the global plan';
+   $('replanBtn').classList.remove('warnpulse');}}
 async function pollPlan(){
  let r;
  try { r=await post('/api/plan/status',{}); }
@@ -415,6 +430,8 @@ async function pollPlan(){
  $('planMode').checked=(r.status==='done');
  if(r.status==='done'&&r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
  if(r.status==='done'&&r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
+ PLAN_META=r.status==='done'?{transposium:r.transposium,spare_pct:r.spare_pct||0,stamp:r.stamp}:null;
+ if(r.status==='done'){$('planStamp').className='small';$('replanBtn').classList.remove('warnpulse');}
  $('replanBtn').style.display=r.status==='done'?'':'none';
  $('planStamp').textContent=r.status==='done'?planStampText(r):'';
  if(r.status==='done'){$('recipe').textContent='GLOBAL plan ready — click a human.';refreshCurrent();}
@@ -426,6 +443,7 @@ function initPlanUI(){
    $('planMode').checked=true;$('replanBtn').style.display='';
    if(r.transposium!==undefined)$('transposiumMode').checked=!!r.transposium;
    if(r.spare_pct!==undefined)$('sparePct').value=r.spare_pct;
+   PLAN_META={transposium:r.transposium,spare_pct:r.spare_pct||0,stamp:r.stamp};
    $('planStamp').textContent=planStampText(r)+' — recipes come from the global plan';}
   else if(r.status==='running'){
    $('planMode').checked=true;$('recipe').textContent='global plan calculating…';
@@ -631,7 +649,8 @@ def plan_status():
     if os.path.exists(plan_file):
         stamp = time.strftime("%H:%M", time.localtime(os.path.getmtime(plan_file)))
         return {"status": "done", "stamp": stamp,
-                "transposium": _plan_transposium()}
+                "transposium": (_plan_meta() or {}).get("transposium", True),
+                "spare_pct": (_plan_meta() or {}).get("spare_pct", 0)}
     rc = PLAN_PROC.poll() if PLAN_PROC else None
     if rc == 130:
         return {"status": "cancelled"}
